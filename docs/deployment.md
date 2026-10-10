@@ -1,6 +1,10 @@
 # Deployment and free-tier assessment
 
-Checked official documentation on 2026-10-10. No remote resources have been created and no endpoint is deployed. No GitHub/deployment/provider credentials were present in the workspace environment.
+Checked official documentation on 2026-10-10. Source is published in the private owner repository [Lingu17/intervexa](https://github.com/Lingu17/intervexa). The Next.js frontend is live at [intervexa-web.onrender.com](https://intervexa-web.onrender.com) on Render Free, and its first GitHub Actions validation run passed. The owner created the dedicated Supabase Free project `ycojzjqvhjvqtbfsgkvt` in Mumbai; its Data API has been disabled so application tables are accessed through FastAPI.
+
+The Python API creation form is prepared on Render Free with migration startup, `/api/ready`, production HTTPS origin, a generated session secret, GitHub social credentials, repository App credentials and a private-key secret file. **The API is not deployed yet:** the owner must replace the database password placeholder in the secure `DATABASE_URL` field. `https://intervexa-api.onrender.com` is the intended backend address and currently returns 404; verify the assigned address after creation and rebuild the frontend if it differs. Do not treat the live public frontend as proof that registration or repository workflows work yet.
+
+The approved GitHub OAuth client is `Intervexa Sign In`, with callback `https://intervexa-web.onrender.com/api/auth/oauth/github/callback`. The separate repository App is `intervexa-repository-intelligence` (App ID `5265112`), installed only on `Lingu17/intervexa` (installation `170014471`). Contents, metadata and pull requests are read-only, with organization membership read permission; Checks write permission is not granted. Push and pull-request events use a random webhook signing secret. Credentials belong in Render secure settings, never source. Credentials returned in provider inspection output were replaced and the affected old credentials revoked before deployment.
 
 ## Candidate deployment
 
@@ -15,7 +19,7 @@ The included `render.yaml` configures **two free web services**, not paid worker
 
 7. Configure social OAuth clients separately from the GitHub repository App, using [the exact callback guide](integrations.md). Verify existing-account linking and personal Gmail/Outlook signup under the deployed HTTPS origin. Contact smoke tests must confirm a database row survives a backend restart, not merely a success toast. Email recovery/delivery and operator legal/contact details must be completed before advertising a public commercial launch.
 
-The existing password-session architecture is retained; Supabase supplies PostgreSQL rather than replacing authentication and migrating existing users. In Supabase, create an owner-authorized eligible project, securely choose its database password and copy the session-pooler/direct connection details from Connect into the API's DATABASE_URL with TLS required. Do not post the URI or password in chat. Ensure the API host can reach the selected endpoint and apply all migrations. No cloud project or GitHub remote has been provisioned from this local workspace.
+The existing password-session architecture is retained; Supabase supplies PostgreSQL rather than replacing authentication. Existing local SQLite accounts and data remain intact; the new cloud database is separate. Use the project session pooler on port 5432 for IPv4 hosting, the `postgresql+psycopg` driver prefix and `sslmode=require`. Percent-encode special characters in the password. Do not post the URI or password in chat. Ensure the API host can reach the selected endpoint and apply all migrations before accepting accounts.
 
 ## Current limits and suitability
 
@@ -28,4 +32,4 @@ Fallback: run on an already owned machine with PostgreSQL and a TLS reverse prox
 
 ## Externally unverified
 
-Render blueprint provisioning and Python runtime availability, PostgreSQL live connectivity, live OAuth/installations/webhooks/Checks, live AI credential acceptance/model generation, TLS/cookie behavior under deployed origins, actual Podman isolation and candidate execution, and all post-deployment smoke tests require the owner's authorized resources. Configuration files and mocked tests do not prove those integrations.
+The frontend deployed through Render's service UI; the blueprint itself has not been provisioned. Python API runtime availability, PostgreSQL connectivity/migrations, live OAuth and installation attachment inside Intervexa, webhook delivery, AI requests, HTTPS sessions and isolated execution still need verification. The GitHub App installation on the selected repository is confirmed at GitHub, but it is not yet attached to an Intervexa cloud workspace. Configuration files and mocked tests do not prove these workflows.

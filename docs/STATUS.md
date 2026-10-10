@@ -1,6 +1,6 @@
 # Intervexa engineering status — October 10, 2026
 
-This iteration extends the existing Next.js/FastAPI/SQLAlchemy application. Baseline before edits: 39 backend tests passed; TypeScript, ESLint and production build passed. Existing accounts and database architecture were preserved. The repository has local Git history setup but no configured remote or published deployment.
+This iteration extends the existing Next.js/FastAPI/SQLAlchemy application. Baseline before edits: 39 backend tests passed; TypeScript, ESLint and production build passed. Existing accounts and database architecture were preserved. Source is now published to the private [Lingu17/intervexa](https://github.com/Lingu17/intervexa) repository, GitHub Actions passed, and the frontend is deployed on Render Free at [intervexa-web.onrender.com](https://intervexa-web.onrender.com). The API is prepared but awaits the owner's database password entry in Render; account and repository workflows are not yet verified on the deployed site.
 
 ## Implemented
 
@@ -27,7 +27,7 @@ This iteration extends the existing Next.js/FastAPI/SQLAlchemy application. Base
 
 ## External configuration and remaining limits
 
-No authorized OAuth clients, GitHub App installation, AI provider key, cloud account/repository remote, live PostgreSQL host or dedicated Linux runner is configured here. Consequently live OAuth/GitHub/webhooks/Checks, actual billable inference, production PostgreSQL/TLS/cookies, Podman isolation and deployment smoke tests remain unverified. No production URL, deployment success or charges are claimed. See [integration setup](integrations.md), [deployment](deployment.md) and [runner requirements](../runner/README.md).
+The owner-authorized GitHub sign-in client and repository App are created, with the App installed only on `Lingu17/intervexa`. Their credentials are in the prepared Render API form, together with the generated session secret and private-key secret file. The dedicated Supabase Free project is healthy and its public Data API is disabled. The frontend deployment succeeded and returned HTTP 200; GitHub Actions passed its full validation run. The API still awaits secure database password entry, so live OAuth, repository ingestion, webhook delivery, PostgreSQL migrations and HTTPS session workflows remain unverified. Google OAuth, AI keys and a dedicated Linux runner remain unconfigured. See [integration setup](integrations.md), [deployment](deployment.md) and [runner requirements](../runner/README.md).
 
 This remains an early-access implementation, not a completed production SaaS. Email verification/recovery delivery, a distributed/proxy-aware limiter, operational backups/monitoring, independent security/legal review, resolved cross-language and dynamic dependency graphs, SQL migration semantics, higher-order combinations and private/dependency-installing/multi-framework runners remain unfinished. Password recovery is an honest unavailable state rather than a fake send operation. Contact review requires the deployment operator's database access; no dashboard is advertised.
 
