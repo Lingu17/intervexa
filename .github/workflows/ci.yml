@@ -1,0 +1,28 @@
+name: Intervexa checks
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: npm ci
+      - run: npm run typecheck && npm run lint && npm run build
+      - run: pip install -r backend/requirements.lock.txt
+      - run: python -m ruff check app migrations tests
+        working-directory: backend
+      - run: python -m pytest -q
+        working-directory: backend
+      - run: python -m alembic upgrade head
+        working-directory: backend
+      - run: npx playwright install --with-deps chromium
+      - run: python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log > /tmp/intervexa-api.log 2>&1 &
+        working-directory: backend
+      - run: npm run start > /tmp/intervexa-web.log 2>&1 &
+      - run: npx playwright test
