@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
-import { api, setCsrf } from "@/lib/api";
+import { api, setCsrf, readApi } from "@/lib/api";
 import { Logo } from "./logo";
 import { Graph } from "./graph";
 const schema = z.object({
@@ -17,11 +17,12 @@ export function Auth({ register = false }: { register?: boolean }) {
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [social, setSocial] = useState({ google: false, github: false });
+  const [social, setSocial] = useState<{ google: boolean; github: boolean }>();
+  const [connectionError, setConnectionError] = useState(false);
   useEffect(() => {
-    api<{ google: boolean; github: boolean }>("/auth/capabilities")
+    readApi<{ google: boolean; github: boolean }>("/auth/capabilities")
       .then(setSocial)
-      .catch(() => {});
+      .catch(() => setConnectionError(true));
   }, []);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,6 +45,7 @@ export function Auth({ register = false }: { register?: boolean }) {
         result.data,
       );
       setCsrf(response.csrf);
+      void readApi("/me", true).catch(() => {});
       router.push("/app");
     } catch (e) {
       setError((e as Error).message);
@@ -93,7 +95,7 @@ export function Auth({ register = false }: { register?: boolean }) {
               <button
                 key={provider}
                 className="button secondary"
-                disabled={!social[provider]}
+                disabled={social !== undefined && !social[provider]}
                 onClick={() => {
                   window.location.href = `/api/auth/oauth/${provider}?origin=${encodeURIComponent(window.location.origin)}`;
                 }}
@@ -102,7 +104,13 @@ export function Auth({ register = false }: { register?: boolean }) {
               </button>
             ))}
           </div>
-          {(!social.google || !social.github) && (
+          {connectionError && (
+            <p className="helper">
+              The service is waking up. You can still continue with Google or
+              GitHub.
+            </p>
+          )}
+          {social && (!social.google || !social.github) && (
             <p className="helper">
               Unavailable social providers need owner setup.{" "}
               <Link href="/docs#oauth">Configuration guide →</Link>

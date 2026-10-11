@@ -26,6 +26,9 @@ import {
 } from "lucide-react";
 import {
   api,
+  readApi,
+  cachedValue,
+  ApiError,
   setCsrf,
   type Me,
   type Repo,
@@ -40,27 +43,32 @@ import { RepositoryExplorer } from "./repository-explorer";
 import { AccountSettings } from "./account-settings";
 import { CommandMenu } from "./command-menu";
 import { UsagePage } from "./usage";
+import { WorkspaceAtlas } from "./workspace-atlas";
 
 function useData<T>(path: string) {
-  const [data, setData] = useState<T>();
+  const [data, setData] = useState<T | undefined>(() => cachedValue<T>(path));
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const reload = useCallback(async () => {
-    setError("");
-    try {
-      setData(await api<T>(path));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [path]);
+  const [loading, setLoading] = useState(() => cachedValue(path) === undefined);
+  const reload = useCallback(
+    async (refresh = true) => {
+      setError("");
+      try {
+        setData(await readApi<T>(path, refresh));
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [path],
+  );
   useEffect(() => {
-    setLoading(true);
-    setData(undefined);
-    void reload();
-  }, [reload]);
-  return { data, error, loading, reload };
+    const cached = cachedValue<T>(path);
+    setLoading(cached === undefined);
+    setData(cached);
+    void reload(false);
+  }, [reload, path]);
+  return { data, error, loading, reload: () => reload(true) };
 }
 export function Badge({ value }: { value: string }) {
   return (
@@ -147,22 +155,30 @@ const navigation = [
 export function Workspace() {
   const path = usePathname();
   const router = useRouter();
-  const [me, setMe] = useState<Me>();
+  const [me, setMe] = useState<Me | undefined>(() => cachedValue<Me>("/me"));
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [light, setLight] = useState(false);
-  useEffect(() => {
-    api<Me>("/me")
+  const [slow, setSlow] = useState(false);
+  const connect = useCallback(() => {
+    setError("");
+    void readApi<Me>("/me", true)
       .then((m) => {
         setCsrf(m.csrf);
         setMe(m);
         setLight(m.preferences?.theme === "light");
       })
       .catch((e) => {
-        setError(e.message);
-        router.replace("/login");
+        if (e instanceof ApiError && e.status === 401) router.replace("/login");
+        else
+          setError(e.message || "Could not reach your workspace. Try again.");
       });
   }, [router]);
+  useEffect(() => {
+    connect();
+    const timer = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(timer);
+  }, [connect]);
   useEffect(() => {
     setOpen(false);
   }, [path]);
@@ -171,14 +187,6 @@ export function Workspace() {
   const selected = navigation.find(
     (n) => n.href === path || (n.href !== "/app" && path.startsWith(n.href)),
   );
-  if (!me)
-    return (
-      <main className="public-content">
-        <Logo />
-        <div className="skeleton" />
-        <p>{error || "Opening your workspace…"}</p>
-      </main>
-    );
   async function logout() {
     try {
       await api("/auth/logout", "POST");
@@ -209,11 +217,11 @@ export function Workspace() {
         </Link>
         <div className="workspace-switch">
           <span className="workspace-icon">
-            {me.organization.name[0].toUpperCase()}
+            {me?.organization.name[0].toUpperCase() || "I"}
           </span>
           <div>
-            <strong>{me.organization.name}</strong>
-            <small>Early-access workspace</small>
+            <strong>{me?.organization.name || "Your workspace"}</strong>
+            <small>Repository intelligence</small>
           </div>
         </div>
         <nav className="sidebar-nav">
@@ -251,13 +259,13 @@ export function Workspace() {
           </div>
           <div className="user-row">
             <span className="avatar">
-              {me.user.name.slice(0, 2).toUpperCase()}
+              {me?.user.name.slice(0, 2).toUpperCase() || "—"}
             </span>
             <div>
-              {me.user.name}
+              {me?.user.name || "Connecting securely"}
               <p>Workspace owner</p>
             </div>
-            <button aria-label="Sign out" onClick={logout}>
+            <button aria-label="Sign out" onClick={logout} disabled={!me}>
               <LogOut size={15} />
             </button>
           </div>
@@ -284,7 +292,11 @@ export function Workspace() {
               <span className="status-dot" /> ADVISORY MODE
             </span>
             <CommandMenu />
-            <button aria-label="Toggle light theme" onClick={toggleTheme}>
+            <button
+              aria-label="Toggle light theme"
+              onClick={toggleTheme}
+              disabled={!me}
+            >
               <Sun size={15} />
             </button>
             <Link href="/app/settings/security" aria-label="Security settings">
@@ -294,7 +306,58 @@ export function Workspace() {
         </header>
         <main className="app-content">
           <ErrorNotice error={error} />
-          {section === "overview" ? (
+          {!me ? (
+            <section
+              className="workspace-boot"
+              aria-label="Workspace connection"
+            >
+              <div className="boot-copy">
+                <div className="eyebrow">INTERVEXA / CODE INTELLIGENCE</div>
+                <h1>
+                  Your code.
+                  <br />
+                  <span>In perspective.</span>
+                </h1>
+                <p>
+                  Explore your architecture, trace changes and inspect the
+                  evidence in one workspace.
+                </p>
+                <div className="connection-state" role="status">
+                  <span className="status-dot" />
+                  {error
+                    ? "Connection interrupted"
+                    : slow
+                      ? "The free server is waking up. Your workspace will appear here."
+                      : "Connecting to your secure workspace"}
+                </div>
+                {(error || slow) && (
+                  <button className="button secondary" onClick={connect}>
+                    <RefreshCw size={14} />
+                    Retry connection
+                  </button>
+                )}
+                <Link href="/docs" className="text-link">
+                  Explore the guide <ArrowUpRight size={14} />
+                </Link>
+              </div>
+              <div className="boot-model" aria-hidden="true">
+                <div className="model-grid" />
+                <div className="code-cube">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <i className="model-orbit orbit-a" />
+                <i className="model-orbit orbit-b" />
+                <div className="model-caption">
+                  SOURCE → STRUCTURE → EVIDENCE
+                </div>
+              </div>
+            </section>
+          ) : section === "overview" ? (
             <Dashboard me={me} />
           ) : section === "repositories" ? (
             segments[1] ? (
@@ -425,6 +488,7 @@ function Dashboard({ me }: { me: Me }) {
         </Link>
       </PageTitle>
       <ErrorNotice error={repos.error || analyses.error || findings.error} />
+      <WorkspaceAtlas repositories={repos.data} />
       <div className="stats-grid">
         {[
           {

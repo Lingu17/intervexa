@@ -128,13 +128,23 @@ async def collect_index(repo_id, body, p, db):
 
     candidates = sorted((e for e in entries if safe(e)), key=lambda e: (not e["path"].endswith(".py"), e["path"]))
     files, budget = [], 0
+    selected, advertised_budget = [], 0
     for entry in candidates[:60]:
-        if budget + entry.get("size", 0) > 500000:
+        if advertised_budget + entry.get("size", 0) > 500000:
             break
-        source = await client.text(repo.full_name, entry["path"], sha)
-        if source is not None and len(source.encode()) <= 50000:
-            if budget + len(source.encode()) <= 500000:
-                budget += len(source.encode())
+        selected.append(entry)
+        advertised_budget += entry.get("size", 0)
+
+    # Four requests at a time; retain deterministic order and actual byte caps.
+    for offset in range(0, len(selected), 4):
+        batch = selected[offset : offset + 4]
+        sources = await asyncio.gather(*(client.text(repo.full_name, e["path"], sha) for e in batch))
+        for entry, source in zip(batch, sources, strict=True):
+            if source is None:
+                continue
+            size = len(source.encode())
+            if size <= 50000 and budget + size <= 500000:
+                budget += size
                 files.append(parse_file(entry["path"], source))
     coverage = {
         "tree_entries": len(entries),

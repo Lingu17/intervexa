@@ -16,13 +16,23 @@ This iteration extends the existing Next.js/FastAPI/SQLAlchemy application. Base
 - Four Alembic revisions, including additive intelligence/auth/contact tables and a data-preserving provider-preference workspace migration. Real local database migrated to 0004_preferences. Upgrade/downgrade/reapply and model/schema comparison pass; a fixture confirms existing email/hash/model/token defaults survive the latest migration.
 - Integration, architecture, troubleshooting and deployment guides; environment examples and Render blueprint extended for social OAuth. No real secrets are committed. Provider credentials exposed during setup were replaced or disabled; deployment secrets stay in provider secure settings.
 
+## Spatial interface and performance update
+
+- The full navigation shell renders before session verification. Temporary service errors keep the interface and expose Retry; only an actual 401 redirects to sign-in. The old blank "Opening your workspace" screen is removed.
+- The dashboard contains a real revision-pinned code atlas, direct source/PR/search actions and a simpler workflow. The shared 3D renderer now uses layered source modules, a dimensional core, curved relationships, ground grid, selection, pointer orbit, zoom, reset and fullscreen. Reduced-motion/no-WebGL users receive an interactive isometric SVG map and keyboard module controls. Rendering runs on demand with a bounded pixel ratio; below-fold scenes load when approaching the viewport. No remote font request blocks styling.
+- Session/user/membership validation is one SQL read; workspace/preferences are one more. Repository and analysis list counts use grouped reads rather than loading child records per row. Tests assert the two-read bootstrap and immediate session revocation.
+- Short-lived (15-second) tab-memory reads coalesce concurrent requests and make return navigation immediate while fresh. Mutations, logout and 401 clear cached data; nothing is persisted to browser storage.
+- Repository indexing fetches four pinned files at a time over reused GitHub HTTP connections. Actual source-byte bounds and deterministic order are tested despite concurrent completion and inaccurate upstream sizes.
+- Synchronous database polling/maintenance runs in a worker thread rather than blocking HTTP's event loop. Cleanup runs once per minute instead of every two seconds; atomic job claims, lease recovery and bounded retries remain in place.
+- Before deployment of this update, two warm production /me requests measured 5.982 and 5.017 seconds. Hosting/network latency remains separate from browser rendering; Render Free still sleeps after inactivity. Final deployment and speed checks are required before claiming a speedup.
+
 ## Verification
 
-- Backend: **70 tests passed**. Includes existing analysis, runner construction, GitHub/webhook, queue and provider tests plus new origins, personal accounts, contact storage/failure/rate, tenant read/write/delete isolation, selected PRs, source indexing/graph/retrieval, embeddings/consent, OAuth linking/replay/claims, invalid AI citations, profile/export/deletion and migration preservation.
-- Browser: **6 tests passed** against running localhost app. Desktop/mobile public pages, contact commit and controlled failure, interactive demo, real signup/session/logout, source/graph/analysis fixtures, command search, profile editing, persisted appearance, usage bounds, provider failure and 3D/fallback. Controlled fixtures do not establish live GitHub/AI success.
+- Backend: **73 tests passed**. Includes existing analysis, runner construction, GitHub/webhook, queue and provider tests plus new origins, personal accounts, contact storage/failure/rate, tenant read/write/delete isolation, selected PRs, source indexing/graph/retrieval, embeddings/consent, OAuth linking/replay/claims, invalid AI citations, profile/export/deletion and migration preservation.
+- Browser: **9 tests passed** against running localhost app. Desktop/mobile public pages, contact commit and controlled failure, interactive demo, real signup/session/logout, source/graph/analysis fixtures, command search, profile editing, persisted appearance, usage bounds, provider failure and 3D/fallback. Controlled fixtures do not establish live GitHub/AI success.
 - Frontend typecheck, ESLint and production build pass. API/runner/migrations/tests Ruff passes. Alembic check reports no schema drift.
 - npm audit: **0 reported vulnerabilities**. pip-audit against the exact backend lockfile: **no known vulnerabilities found**. The audit tool ran in a separate ignored virtual environment, without altering runtime dependencies.
-- Local API startup/readiness and frontend proxy are verified. Local development servers are currently stopped. Screenshots are under ignored test-results. Browser-created accounts/messages are clearly identified test records, not seeded customer activity.
+- Local API startup/readiness and frontend proxy are verified. Local development servers are running at 127.0.0.1:3000 and 127.0.0.1:8000. Screenshots are under ignored test-results. Browser-created accounts/messages are clearly identified test records, not seeded customer activity.
 - One known test-client deprecation warning remains (Starlette/httpx2 transition); no tests were suppressed.
 
 ## External configuration and remaining limits

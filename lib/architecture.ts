@@ -95,12 +95,12 @@ export function positions(
 ): [number, number, number][] {
   return nodes.map((_, i) => {
     if (!i) return [0, 0, 0];
-    const ring = i > 10 ? 2 : 1;
+    const ring = Math.ceil(i / 10);
     const angle =
       (((i - 1) % 10) * Math.PI * 2) / Math.min(nodes.length - 1, 10);
     return [
-      Math.cos(angle) * (ring === 1 ? 2.4 : 3.7),
-      Math.sin(angle) * (ring === 1 ? 1.65 : 2.4),
+      Math.cos(angle) * (2.4 + (ring - 1) * 1.3),
+      Math.sin(angle) * (1.65 + (ring - 1) * 0.75),
       Math.sin(angle * 2) * 0.6,
     ];
   });

@@ -35,17 +35,22 @@ def token_hash(token):
 
 def principal(request: Request, db: DBSession = Depends(get_db)):
     token = request.cookies.get("intervexa_session", "")
-    session = db.get(Session, token_hash(token))
-    if not session or session.expires < time.time():
+    if not token:
         raise HTTPException(401, "Sign in to continue.")
+    # One round trip instead of separate session, user and membership reads.
+    row = db.execute(
+        select(Session, User, Membership)
+        .join(User, User.id == Session.user_id)
+        .outerjoin(Membership, Membership.user_id == User.id)
+        .where(Session.id == token_hash(token))
+    ).first()
+    if not row or row[0].expires < time.time():
+        raise HTTPException(401, "Sign in to continue.")
+    session, user, member = row
     if request.method not in ("GET", "HEAD", "OPTIONS"):
         supplied = request.headers.get("X-CSRF-Token", "")
         if not secrets.compare_digest(session.csrf, supplied):
             raise HTTPException(403, "Session verification failed. Refresh and try again.")
-    user = db.get(User, session.user_id)
-    if user is None:
-        raise HTTPException(401, "Sign in to continue.")
-    member = db.scalar(select(Membership).where(Membership.user_id == user.id))
     if not member:
         raise HTTPException(403, "Workspace membership required.")
     return user, member.org_id, session

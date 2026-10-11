@@ -147,6 +147,7 @@ test("repository explorer uses pinned source and actual supplied graph, with con
   await expect(
     page.getByRole("heading", { name: "Explore the codebase" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Files", exact: true }).click();
   await page.getByRole("button", { name: /auth.py 1 symbols/ }).click();
   await expect(page.locator(".source-code")).toContainText("return save()");
   await expect(

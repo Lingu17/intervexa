@@ -1,6 +1,7 @@
 import base64
 import json
 import time
+from contextlib import nullcontext
 from pathlib import Path
 
 import httpx
@@ -8,6 +9,8 @@ import jwt
 from fastapi import HTTPException
 
 from .config import settings
+
+transport: httpx.AsyncClient | None = None
 
 
 def app_jwt():
@@ -30,7 +33,11 @@ class GitHub:
         self.token = token
 
     async def request(self, method, path, **kwargs):
-        async with httpx.AsyncClient(timeout=25, follow_redirects=False) as client:
+        async with (
+            nullcontext(transport)
+            if transport is not None
+            else httpx.AsyncClient(timeout=25, follow_redirects=False) as client
+        ):
             try:
                 response = await client.request(
                     method,

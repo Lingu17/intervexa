@@ -195,35 +195,13 @@ async def process(run_id):
         db.commit()
 
 
-async def tick():
+def claim_job(maintenance=True):
     now = time.time()
     with SessionLocal() as db:
         # Recover abandoned leases after a process restart or crash. A job is bounded
         # by a 10 minute wall timeout; retries are deterministic and capped.
-        db.execute(
-            update(Analysis)
-            .where(Analysis.state.in_(["collecting", "analyzing", "testing"]), Analysis.updated_at < now - 660)
-            .values(state="queued", available_at=now, error="Worker lease expired; retry scheduled.")
-        )
-        db.execute(delete(Session).where(Session.expires < now))
-        db.execute(delete(OAuthState).where(OAuthState.expires < now))
-        db.execute(delete(ContactSubmission).where(ContactSubmission.created_at < now - 90 * 86400))
-        db.execute(delete(Delivery).where(Delivery.created_at < now - 90 * 86400))
-        for repo in db.scalars(select(Repository)):
-            db.execute(
-                delete(RepositoryIndex).where(
-                    RepositoryIndex.repo_id == repo.id,
-                    RepositoryIndex.created_at < now - repo.policy.get("retention_days", 30) * 86400,
-                )
-            )
-            db.execute(
-                delete(Analysis).where(
-                    Analysis.repo_id == repo.id,
-                    Analysis.created_at < now - repo.policy.get("retention_days", 30) * 86400,
-                    Analysis.state.not_in(["queued", "collecting", "analyzing", "testing"]),
-                )
-            )
-        db.commit()
+        if maintenance:
+            maintain(db, now)
         run = db.scalar(
             select(Analysis)
             .where(Analysis.state == "queued", Analysis.available_at <= now)
@@ -231,17 +209,48 @@ async def tick():
             .limit(1)
         )
         if not run:
-            return
-        # Atomic compare-and-set claim works with multiple API instances.
+            return None
         claimed = db.execute(
             update(Analysis)
             .where(Analysis.id == run.id, Analysis.state == "queued")
             .values(state="collecting", updated_at=now, attempts=Analysis.attempts + 1)
         ).rowcount
         db.commit()
-        run_id = run.id
-        if not claimed:
-            return
+        return run.id if claimed else None
+
+
+def maintain(db, now):
+    db.execute(
+        update(Analysis)
+        .where(Analysis.state.in_(["collecting", "analyzing", "testing"]), Analysis.updated_at < now - 660)
+        .values(state="queued", available_at=now, error="Worker lease expired; retry scheduled.")
+    )
+    db.execute(delete(Session).where(Session.expires < now))
+    db.execute(delete(OAuthState).where(OAuthState.expires < now))
+    db.execute(delete(ContactSubmission).where(ContactSubmission.created_at < now - 90 * 86400))
+    db.execute(delete(Delivery).where(Delivery.created_at < now - 90 * 86400))
+    for repo in db.scalars(select(Repository)):
+        db.execute(
+            delete(RepositoryIndex).where(
+                RepositoryIndex.repo_id == repo.id,
+                RepositoryIndex.created_at < now - repo.policy.get("retention_days", 30) * 86400,
+            )
+        )
+        db.execute(
+            delete(Analysis).where(
+                Analysis.repo_id == repo.id,
+                Analysis.created_at < now - repo.policy.get("retention_days", 30) * 86400,
+                Analysis.state.not_in(["queued", "collecting", "analyzing", "testing"]),
+            )
+        )
+    db.commit()
+
+
+async def tick(maintenance=True):
+    # PostgreSQL uses a synchronous driver; never block HTTP's event loop with polling.
+    run_id = await asyncio.to_thread(claim_job, maintenance)
+    if not run_id:
+        return
     try:
         await asyncio.wait_for(process(run_id), timeout=600)
     except Exception as exc:
@@ -269,9 +278,13 @@ import httpx  # noqa: E402
 
 
 async def loop():
+    last_maintenance = 0
     while True:
         try:
-            await tick()
+            maintenance = time.monotonic() - last_maintenance >= 60
+            await tick(maintenance)
+            if maintenance:
+                last_maintenance = time.monotonic()
         except Exception as exc:
             logger.error(json.dumps({"event": "queue_unavailable", "error_type": type(exc).__name__}))
         await asyncio.sleep(2)

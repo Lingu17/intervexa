@@ -18,7 +18,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field, SecretStr
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DBSession
 
@@ -59,13 +59,21 @@ async def lifespan(app):
             or settings.database_url.startswith("sqlite")
         ):
             raise RuntimeError("Production requires HTTPS origin, a >=32 character session secret, and PostgreSQL.")
+    from . import github
     from .worker import loop
 
-    task = asyncio.create_task(loop())
-    yield
-    task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await task
+    async with httpx.AsyncClient(
+        timeout=25, follow_redirects=False, limits=httpx.Limits(max_connections=8, max_keepalive_connections=8)
+    ) as client:
+        github.transport = client
+        task = asyncio.create_task(loop())
+        try:
+            yield
+        finally:
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+            github.transport = None
 
 
 app = FastAPI(
@@ -216,7 +224,11 @@ def authenticate(
 @app.get("/api/me")
 def me(p=Depends(principal), db: DBSession = Depends(get_db)):
     user, org, session = p
-    workspace = db.get(Organization, org)
+    workspace, preference = db.execute(
+        select(Organization, WorkspacePreference)
+        .outerjoin(WorkspacePreference, WorkspacePreference.org_id == Organization.id)
+        .where(Organization.id == org)
+    ).one()
     required = {
         name: getattr(settings, name.lower())
         for name in (
@@ -236,9 +248,7 @@ def me(p=Depends(principal), db: DBSession = Depends(get_db)):
         "github_configured": all(required.values()),
         "github_missing": [name for name, value in required.items() if not value],
         "runner_configured": bool(settings.sandbox_url),
-        "preferences": {
-            "theme": db.get(WorkspacePreference, org).theme if db.get(WorkspacePreference, org) else "dark"
-        },
+        "preferences": {"theme": preference.theme if preference else "dark"},
     }
 
 
@@ -412,16 +422,21 @@ async def add_repo(body: RepoInput, p=Depends(principal), db: DBSession = Depend
 
 @app.get("/api/repositories")
 def repositories(p=Depends(principal), db: DBSession = Depends(get_db)):
-    rows = db.scalars(select(Repository).where(Repository.org_id == p[1])).all()
+    rows = db.execute(
+        select(Repository, func.count(PullRequest.id))
+        .outerjoin(PullRequest, PullRequest.repo_id == Repository.id)
+        .where(Repository.org_id == p[1])
+        .group_by(Repository.id)
+    ).all()
     return [
         {
             "id": r.id,
             "full_name": r.full_name,
             "default_branch": r.default_branch,
             "policy": r.policy,
-            "pull_requests": len(db.scalars(select(PullRequest).where(PullRequest.repo_id == r.id)).all()),
+            "pull_requests": count,
         }
-        for r in rows
+        for r, count in rows
     ]
 
 
@@ -554,9 +569,11 @@ def create_analysis(
 
 @app.get("/api/analyses")
 def analyses(offset: int = 0, limit_count: int = 30, p=Depends(principal), db: DBSession = Depends(get_db)):
-    rows = db.scalars(
-        select(Analysis)
+    rows = db.execute(
+        select(Analysis, func.count(Finding.id))
+        .outerjoin(Finding, Finding.analysis_id == Analysis.id)
         .where(Analysis.org_id == p[1])
+        .group_by(Analysis.id)
         .order_by(Analysis.created_at.desc())
         .offset(max(0, offset))
         .limit(min(max(limit_count, 1), 100))
@@ -570,9 +587,9 @@ def analyses(offset: int = 0, limit_count: int = 30, p=Depends(principal), db: D
             "updated_at": r.updated_at,
             "coverage": r.coverage,
             "error": r.error,
-            "findings": len(db.scalars(select(Finding).where(Finding.analysis_id == r.id)).all()),
+            "findings": count,
         }
-        for r in rows
+        for r, count in rows
     ]
 
 

@@ -1,12 +1,53 @@
 let csrf = "";
+const memory = new Map<string, { data: unknown; expires: number }>();
+const pending = new Map<string, Promise<unknown>>();
+let generation = 0;
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
+export function clearApiCache() {
+  generation++;
+  memory.clear();
+  pending.clear();
+}
+export function cachedValue<T>(path: string): T | undefined {
+  const entry = memory.get(path);
+  return entry && entry.expires > Date.now() ? (entry.data as T) : undefined;
+}
+// Short-lived, tab-memory cache only. Never persists credentials or account data.
+export function readApi<T>(path: string, refresh = false): Promise<T> {
+  const cached = cachedValue<T>(path);
+  if (!refresh && cached !== undefined) return Promise.resolve(cached);
+  const existing = pending.get(path);
+  if (existing) return existing as Promise<T>;
+  const started = generation;
+  const request = api<T>(path)
+    .then((data) => {
+      if (started === generation)
+        memory.set(path, { data, expires: Date.now() + 15_000 });
+      return data;
+    })
+    .finally(() => {
+      if (pending.get(path) === request) pending.delete(path);
+    });
+  pending.set(path, request);
+  return request;
+}
 export function setCsrf(value: string) {
   csrf = value;
+  if (!value) clearApiCache();
 }
 export async function api<T>(
   path: string,
   method = "GET",
   body?: unknown,
 ): Promise<T> {
+  if (method !== "GET") clearApiCache();
   const response = await fetch("/api" + path, {
     method,
     credentials: "same-origin",
@@ -17,20 +58,21 @@ export async function api<T>(
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  const data = await response
-    .json()
-    .catch(() => ({
-      detail:
-        response.status === 502 || response.status === 504
-          ? "The service is starting or the request timed out. Retry shortly; refresh to check whether your work completed."
-          : "The server returned an unreadable response.",
-    }));
-  if (!response.ok)
-    throw new Error(
+  const data = await response.json().catch(() => ({
+    detail:
+      response.status === 502 || response.status === 504
+        ? "The service is starting or the request timed out. Retry shortly; refresh to check whether your work completed."
+        : "The server returned an unreadable response.",
+  }));
+  if (!response.ok) {
+    if (response.status === 401) clearApiCache();
+    throw new ApiError(
       typeof data.detail === "string"
         ? data.detail
         : "The request could not be completed.",
+      response.status,
     );
+  }
   return data as T;
 }
 export type Me = {

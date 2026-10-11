@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, readApi, cachedValue } from "@/lib/api";
 import { Graph } from "./graph";
 import { ArchitectureNode, ArchitectureEdge } from "@/lib/architecture";
 import { ProviderFormFields, useProvider } from "./provider-settings";
@@ -34,15 +35,23 @@ type Result = {
   score: number;
 };
 export function RepositoryExplorer({ id }: { id: string }) {
-  const [index, setIndex] = useState<Index>(),
-    [tab, setTab] = useState("files"),
+  const params = useSearchParams();
+  const root = "/repositories/" + id;
+  const [index, setIndex] = useState<Index | undefined>(() =>
+      cachedValue<Index>(root + "/intelligence"),
+    ),
+    [tab, setTab] = useState(
+      params.get("view") === "search" ? "search" : "architecture",
+    ),
     [file, setFile] = useState<SourceFile>();
   const [branches, setBranches] = useState<{ name: string; sha: string }[]>([]),
     [branch, setBranch] = useState("");
   const [status, setStatus] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [loading, setLoading] = useState(true);
+    [loading, setLoading] = useState(
+      () => !cachedValue(root + "/intelligence"),
+    );
   const [query, setQuery] = useState(""),
     [results, setResults] = useState<Result[]>([]),
     [answer, setAnswer] = useState(""),
@@ -50,10 +59,9 @@ export function RepositoryExplorer({ id }: { id: string }) {
     [semantic, setSemantic] = useState(false),
     [filter, setFilter] = useState("");
   const p = useProvider();
-  const root = "/repositories/" + id;
   const reload = useCallback(async () => {
     try {
-      const data = await api<Index>(root + "/intelligence");
+      const data = await readApi<Index>(root + "/intelligence");
       setIndex(data);
       setBranch(data.branch);
       setStatus("");
