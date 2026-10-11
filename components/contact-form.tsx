@@ -1,7 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 export function ContactForm() {
+  const [emailEnabled, setEmailEnabled] = useState(false);
+  useEffect(() => {
+    api<{ email_notifications: boolean }>("/contact/config")
+      .then((result) => setEmailEnabled(result.email_notifications))
+      .catch(() => {});
+  }, []);
   const [status, setStatus] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -75,8 +81,10 @@ export function ContactForm() {
         <input name="website" tabIndex={-1} autoComplete="off" />
       </label>
       <p className="helper">
-        Submissions are stored for up to 90 days. Email delivery and response
-        timing are not configured. <a href="/privacy">Privacy details</a>.
+        Submissions are stored for up to 90 days. {emailEnabled
+          ? "We notify the team by email. Response times may vary."
+          : "Messages are saved; team email notifications are currently unavailable."}
+        {" "}<a href="/privacy">Privacy details</a>.
       </p>
       {error && (
         <p className="notice error" role="alert">

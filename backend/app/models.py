@@ -181,6 +181,10 @@ class ContactSubmission(Base):
     topic: Mapped[str] = mapped_column(String(30))
     message: Mapped[str] = mapped_column(Text)
     created_at: Mapped[float] = mapped_column(Float, default=time.time, index=True)
+    email_state: Mapped[str] = mapped_column(String(20), default="disabled", server_default="disabled")
+    email_attempts: Mapped[int] = mapped_column(default=0, server_default="0")
+    email_available_at: Mapped[float] = mapped_column(Float, default=0, server_default="0")
+    email_provider_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
 
 class RepositoryIndex(Base):

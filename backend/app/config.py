@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     github_login_client_id: str = ""
     github_login_client_secret: str = ""
+    resend_api_key: str = ""
+    contact_email_from: str = "Intervexa <onboarding@resend.dev>"
+    contact_email_to: str = ""
+
+    @property
+    def contact_email_enabled(self) -> bool:
+        return bool(self.resend_api_key and self.contact_email_to and self.contact_email_from)
 
     @property
     def origins(self) -> list[str]:

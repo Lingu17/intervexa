@@ -63,7 +63,7 @@ The deployed application discovered the repository, synchronized both PRs, and p
 
 | Check | Latest result |
 | --- | --- |
-| Backend regression suite | **173 passed** |
+| Backend regression suite | **182 passed** |
 | Browser workflows | **11 passed** |
 | Named acceptance scenarios | **100 / 100 passed** |
 | Repeated controlled Git-state runs | **100 / 100 matched expected behavior**: 75 isolated-state passes, 25 intentional combined-state failures |
@@ -136,7 +136,7 @@ Open **http://localhost:3000** or **http://127.0.0.1:3000**. Both exact local al
 
 From a connected repository, select **Explore code & architecture**, load authorized branches and index one. Browse pinned source/symbols, search paths/identifiers, inspect Python module imports and review explicit coverage. Optional semantic retrieval creates bounded OpenAI vectors only with paid consent. Repository Q&A retrieves four source excerpts and rejects invalid path/line citations; interpretation still needs review. No index or AI workflow executes repository code.
 
-Google/GitHub social sign-in reuses secure database sessions and requires owner-configured client credentials. Existing-email collisions require authenticated account linking. Password recovery/email verification remain unavailable without a verified delivery service. Account settings provide profile/workspace editing, initials avatars, a bounded JSON export and confirmed personal account deletion. The public contact form stores real submissions, with validation, spam/rate controls and 90-day retention.
+Google/GitHub social sign-in reuses secure database sessions and requires owner-configured client credentials. Existing-email collisions require authenticated account linking. Password recovery/email verification remain unavailable without a verified delivery service. Account settings provide profile/workspace editing, initials avatars, a bounded JSON export and confirmed personal account deletion. The public contact form stores real submissions, with validation, spam/rate controls and 90-day retention. Optional Resend team notifications use a durable queue with bounded retries and idempotency; see [email setup](docs/contact-email.md).
 
 See [exact OAuth/GitHub/provider configuration](docs/integrations.md), [architecture](docs/architecture.md) and [troubleshooting](docs/troubleshooting.md). Secret values belong in backend/hosting settings, never chat or frontend public variables.
 

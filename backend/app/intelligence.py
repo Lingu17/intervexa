@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select
 
+from .config import settings
 from .db import get_db
 from .github import installation_client
 from .models import (
@@ -409,15 +410,29 @@ def contact(body: Contact, request: Request, db=Depends(get_db)):
     if body.website or len(body.message.strip()) < 20 or len(body.name.strip()) < 2:
         raise HTTPException(422, "Submission could not be accepted. Check your fields.")
     row = ContactSubmission(
-        name=body.name.strip(), email=body.email.strip().lower(), topic=body.topic, message=body.message.strip()
+        name=body.name.strip(),
+        email=body.email.strip().lower(),
+        topic=body.topic,
+        message=body.message.strip(),
+        email_state="queued" if settings.contact_email_enabled else "disabled",
     )
     db.add(row)
     db.commit()
     return {
         "id": row.id,
         "status": "recorded",
-        "message": "Your submission was recorded in Intervexa's database. Email delivery and response timing are not configured.",
+        "notification": row.email_state,
+        "message": (
+            "Your message is saved and an email notification is queued for the Intervexa team. Response times may vary."
+            if row.email_state == "queued"
+            else "Your message is saved. Team email notifications are currently unavailable; no response time is guaranteed."
+        ),
     }
+
+
+@router.get("/contact/config")
+def contact_config():
+    return {"email_notifications": settings.contact_email_enabled}
 
 
 class Profile(BaseModel):

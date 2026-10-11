@@ -50,7 +50,7 @@ test("public information architecture, meaningful demo and responsive contact", 
       "Clearly identified local browser test submission for contact persistence.",
     );
   await page.getByRole("button", { name: "Submit message" }).click();
-  await expect(page.getByRole("status")).toContainText("recorded");
+  await expect(page.getByRole("status")).toContainText("saved");
   await page.screenshot({
     path: "test-results/contact-mobile.png",
     fullPage: true,

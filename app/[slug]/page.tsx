@@ -231,7 +231,7 @@ const pages: Record<
       ],
       [
         "External services",
-        "GitHub supplies authorized repository data. Google/GitHub verify social identity when configured. Your selected AI provider receives bounded source/question context only for approved operations. Provider API keys are not persisted.",
+        "GitHub supplies authorized repository data. Google/GitHub verify social identity when configured. Your selected AI provider receives bounded source/question context only for approved operations. Provider API keys are not persisted. When team email notifications are enabled, Resend receives the contact name, email, topic and message to notify the operator. Do not include credentials or sensitive information in your message.",
       ],
       [
         "Retention and removal",
@@ -315,7 +315,7 @@ const pages: Record<
       ],
       [
         "Support",
-        "Use the database-backed contact form. Email delivery, an admin review portal and a response-time commitment are not configured.",
+        "Use the database-backed contact form. When enabled, a durable queue notifies the team by email; the submission confirmation states whether a notification was queued. An admin review portal and a guaranteed response time are unavailable.",
       ],
     ],
   },

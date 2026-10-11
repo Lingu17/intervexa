@@ -281,6 +281,9 @@ async def loop():
     last_maintenance = 0
     while True:
         try:
+            from .contact_email import deliver_one
+
+            await asyncio.to_thread(deliver_one)
             maintenance = time.monotonic() - last_maintenance >= 60
             await tick(maintenance)
             if maintenance:
