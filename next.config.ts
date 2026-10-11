@@ -1,4 +1,11 @@
 import type { NextConfig } from "next";
+const backendUrl = (process.env.BACKEND_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+if (process.env.VERCEL && !process.env.BACKEND_URL) {
+  throw new Error("Set BACKEND_URL to the Render API HTTPS origin before deploying to Vercel.");
+}
+if (process.env.VERCEL && new URL(backendUrl).protocol !== "https:") {
+  throw new Error("Vercel deployments require an HTTPS BACKEND_URL.");
+}
 const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
@@ -8,7 +15,7 @@ const config: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL || "http://127.0.0.1:8000"}/api/:path*`,
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },

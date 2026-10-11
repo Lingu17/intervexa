@@ -1,4 +1,4 @@
-# Blueprint reference. Current services were created through Render's dashboard.
+# Backend only. Deploy the repository-root Next.js frontend on Vercel.
 services:
   - type: web
     name: intervexa-api
@@ -41,14 +41,3 @@ services:
         sync: false
       - key: GITHUB_PUBLISH_CHECKS
         value: "false"
-  - type: web
-    name: intervexa-web
-    runtime: node
-    plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start -- --hostname 0.0.0.0 --port $PORT
-    envVars:
-      - key: NODE_VERSION
-        value: 24.20.0
-      - key: BACKEND_URL
-        sync: false

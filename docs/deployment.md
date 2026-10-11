@@ -1,5 +1,18 @@
 # Deployment and free-tier assessment
 
+## Vercel frontend + Render backend
+
+The target hosting setup is now Vercel for the repository-root Next.js frontend and Render for FastAPI. `vercel.json` selects Next.js; `render.yaml` defines only the API. The historical deployment notes below describe the previous Render frontend, not verification of the Vercel migration.
+
+1. Import `Lingu17/intervexa` into Vercel as a **single Next.js project**, root directory `./`. Do not import the detected Python backend into Vercel. Set `BACKEND_URL=https://intervexa-api.onrender.com` before building. Rebuild whenever it changes. The `/api/*` rewrite preserves same-origin browser sessions and CSRF headers.
+2. Keep the existing Render API and PostgreSQL database. Set its `APP_ORIGIN` to the exact production Vercel HTTPS origin, with no trailing slash. If retaining the old frontend temporarily, add that exact origin to `ALLOWED_ORIGINS`. Preview domains are not automatically allowed; do not add wildcard origins.
+3. Update GitHub login and Google OAuth callbacks to `<frontend-origin>/api/auth/oauth/github/callback` and `<frontend-origin>/api/auth/oauth/google/callback`. Update the repository GitHub App callback to `<frontend-origin>/api/github/callback` and its setup URL to the frontend. Keep webhooks on `https://intervexa-api.onrender.com/api/github/webhook`.
+4. Verify `/api/health` and `/api/ready` through Vercel, then password login/logout, OAuth, repository indexing and analysis before retiring the old frontend. Removing a service from this blueprint is not evidence that its dashboard service has been deleted.
+
+Vercel external rewrites have a [120-second proxy limit](https://vercel.com/docs/errors/router_external_target_error). The local Next.js `proxyTimeout` does not override it. Indexing and isolated verification may exceed that limit; a timeout can occur while backend work continues. Refresh to check completion, and use background jobs with polling before promising support for longer synchronous requests. Render cold starts also count toward that limit.
+
+Keep database, session, OAuth and provider secrets on Render. Only the backend origin is needed on Vercel. Use a Vercel plan permitted for the application's usage; no paid upgrade is authorized by this configuration.
+
 Hosting documentation was checked on 2026-10-10; configuration status updated on 2026-10-11. Source is published in the private owner repository [Lingu17/intervexa](https://github.com/Lingu17/intervexa). The Next.js frontend is live at [intervexa-web.onrender.com](https://intervexa-web.onrender.com) on Render Free, and its first GitHub Actions validation run passed. The owner created the dedicated Supabase Free project `ycojzjqvhjvqtbfsgkvt` in Mumbai; its Data API has been disabled so application tables are accessed through FastAPI.
 
 Both services are live on Render Free. The FastAPI backend is [intervexa-api.onrender.com](https://intervexa-api.onrender.com), service `srv-db577iks728c73c3gv00`. Supabase password synchronization is resolved, all four migrations applied, and direct/proxied health plus database readiness passed. Production registration, password login/logout, secure session cookies, CSRF/origin rejection, preferences, temporary-account deletion and contact storage passed. GitHub login, installation attachment, branch listing and PR synchronization succeeded; the owner repository has no open PRs. Indexing saved 60 revision-pinned files, and source/architecture are available. Next's proxy deadline now matches the bounded backend indexing deadline.
