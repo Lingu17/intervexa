@@ -8,22 +8,48 @@ from itertools import combinations
 def extract_python(source: str, path: str):
     try:
         tree = ast.parse(source)
-    except SyntaxError:
+    except (SyntaxError, ValueError, RecursionError):
         return {"supported": False, "reason": "Python parse failed", "entities": []}
+    qualified = {}
+
+    def scopes(node, parents=()):
+        for child in ast.iter_child_nodes(node):
+            nested = parents
+            if isinstance(child, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                nested = (*parents, child.name)
+                qualified[id(child)] = ".".join(nested)
+            scopes(child, nested)
+
+    def own_returns(node):
+        # A nested function/class owns its returns, not its enclosing function.
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+                continue
+            if isinstance(child, ast.Return):
+                yield child
+            yield from own_returns(child)
+
+    scopes(tree)
     entities = []
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             args = node.args
             signature = {
                 "positional": [a.arg for a in args.posonlyargs + args.args],
+                "positional_only": [a.arg for a in args.posonlyargs],
                 "required": len(args.posonlyargs + args.args) - len(args.defaults),
                 "keyword_only": [a.arg for a in args.kwonlyargs],
+                "required_keyword_only": [
+                    a.arg for a, default in zip(args.kwonlyargs, args.kw_defaults, strict=True) if default is None
+                ],
                 "variadic": bool(args.vararg or args.kwarg),
+                "vararg": args.vararg.arg if args.vararg else None,
+                "kwarg": args.kwarg.arg if args.kwarg else None,
             }
             keys = sorted(
                 {
                     key.value
-                    for ret in ast.walk(node)
+                    for ret in own_returns(node)
                     if isinstance(ret, ast.Return) and isinstance(ret.value, ast.Dict)
                     for key in ret.value.keys
                     if isinstance(key, ast.Constant) and isinstance(key.value, str)
@@ -33,6 +59,7 @@ def extract_python(source: str, path: str):
                 {
                     "kind": "function",
                     "name": node.name,
+                    "qualified_name": qualified[id(node)],
                     "path": path,
                     "line": node.lineno,
                     "signature": signature,
@@ -119,10 +146,13 @@ def select_candidates(pulls, max_pairs=10):
 
 
 def compare_contracts(base_entities, head_entities):
-    before = {e["name"]: e for e in base_entities if e["kind"] == "function"}
+    def identity(entity):
+        return entity.get("path"), entity.get("qualified_name", entity["name"])
+
+    before = {identity(e): e for e in base_entities if e["kind"] == "function"}
     changes = []
     for entity in head_entities:
-        old = before.get(entity["name"])
+        old = before.get(identity(entity))
         if entity["kind"] == "function" and old:
             if old["signature"] != entity["signature"]:
                 changes.append({"type": "signature", "before": old, "after": entity})

@@ -28,7 +28,7 @@ This iteration extends the existing Next.js/FastAPI/SQLAlchemy application. Base
 
 ## Verification
 
-- Backend: **73 tests passed**. Includes existing analysis, runner construction, GitHub/webhook, queue and provider tests plus new origins, personal accounts, contact storage/failure/rate, tenant read/write/delete isolation, selected PRs, source indexing/graph/retrieval, embeddings/consent, OAuth linking/replay/claims, invalid AI citations, profile/export/deletion and migration preservation.
+- Backend: **173 tests passed**. Includes a new [100-scenario acceptance suite](acceptance-report.md), analysis, runner construction, GitHub/webhook, queue and provider tests, origins, personal accounts, contact storage/failure/rate, tenant isolation, selected PRs, source indexing/graph/retrieval, embeddings/consent, OAuth linking/replay/claims, invalid AI citations, profile/export/deletion and migration preservation.
 - Browser: **9 tests passed** against running localhost app. Desktop/mobile public pages, contact commit and controlled failure, interactive demo, real signup/session/logout, source/graph/analysis fixtures, command search, profile editing, persisted appearance, usage bounds, provider failure and 3D/fallback. Controlled fixtures do not establish live GitHub/AI success.
 - Frontend typecheck, ESLint and production build pass. API/runner/migrations/tests Ruff passes. Alembic check reports no schema drift.
 - npm audit: **0 reported vulnerabilities**. pip-audit against the exact backend lockfile: **no known vulnerabilities found**. The audit tool ran in a separate ignored virtual environment, without altering runtime dependencies.

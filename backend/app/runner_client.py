@@ -40,7 +40,22 @@ async def execute(repository, pulls, source=None):
 
 
 def classify(result):
+    if not isinstance(result, dict):
+        return "inconclusive"
     cases = result.get("cases", [])
+    if not isinstance(cases, list) or len(cases) != 5 or any(not isinstance(r, dict) for r in cases):
+        return "inconclusive"
+    names = [r.get("name") for r in cases]
+    if any(not isinstance(name, str) for name in names) or len(set(names)) != len(names):
+        return "inconclusive"
+    for case in cases:
+        if any(type(case.get(key)) is not int or case[key] < 0 for key in ("exit_code", "test_count")):
+            return "inconclusive"
+        if any(type(case.get(key, 0)) is not int or case.get(key, 0) < 0 for key in ("errors", "assertion_failures")):
+            return "inconclusive"
+        failures = case.get("failed_tests", [])
+        if not isinstance(failures, list) or any(not isinstance(name, str) or not name for name in failures):
+            return "inconclusive"
     by_name = {r.get("name"): r for r in cases}
     baseline = by_name.get("baseline")
     combined = [by_name.get("combined-1"), by_name.get("combined-2")]
