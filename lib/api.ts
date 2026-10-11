@@ -19,7 +19,12 @@ export async function api<T>(
   });
   const data = await response
     .json()
-    .catch(() => ({ detail: "The server returned an unreadable response." }));
+    .catch(() => ({
+      detail:
+        response.status === 502 || response.status === 504
+          ? "The service is starting or the request timed out. Retry shortly; refresh to check whether your work completed."
+          : "The server returned an unreadable response.",
+    }));
   if (!response.ok)
     throw new Error(
       typeof data.detail === "string"

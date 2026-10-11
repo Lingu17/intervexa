@@ -6,6 +6,8 @@ __pycache__/
 .ruff_cache/
 *.db
 *.db-*
+*.pem
+*.key
 .env
 .env.local
 backend/artifacts/

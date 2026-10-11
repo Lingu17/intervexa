@@ -73,6 +73,7 @@ export function RepositoryExplorer({ id }: { id: string }) {
       await action();
     } catch (e) {
       setError((e as Error).message);
+      setStatus("");
     } finally {
       setBusy(false);
     }

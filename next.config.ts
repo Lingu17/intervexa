@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  // Repository indexing has a bounded 180-second backend deadline.
+  experimental: { proxyTimeout: 190_000 },
   async rewrites() {
     return [
       {

@@ -1,4 +1,4 @@
-# Configuration only. No resources have been created or billed.
+# Blueprint reference. Current services were created through Render's dashboard.
 services:
   - type: web
     name: intervexa-api

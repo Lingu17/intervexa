@@ -659,8 +659,10 @@ function Repositories({ me }: { me: Me }) {
           <p style={{ fontSize: 12, marginBottom: 18 }}>
             Install the app with access to selected repositories, then authorize
             your GitHub account to confirm installation access. Required
-            permissions: metadata, contents and pull requests (read), checks
-            (write).
+            permissions: metadata, contents and pull requests (read), and
+            organization membership (read) for organization installations.
+            Checks write access is optional and only needed when publishing
+            advisory checks is explicitly enabled.
           </p>
           <div className="inline-actions">
             {me.github_configured ? (
