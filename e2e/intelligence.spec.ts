@@ -80,6 +80,19 @@ test("public information architecture, meaningful demo and responsive contact", 
   await expect(page.getByRole("status")).toHaveCount(0);
 });
 
+test("sign-in remains reachable on phones and tablets", async ({ page }) => {
+  await page.goto("/");
+  for (const width of [320, 390, 768]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  }
+  await page.getByRole("link", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+});
+
 test("repository explorer uses pinned source and actual supplied graph, with controlled GitHub fixtures", async ({
   page,
 }) => {
