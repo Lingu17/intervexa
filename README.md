@@ -2,7 +2,7 @@
 
 <img src="public/brand/intervexa-logo-dark.svg" alt="Intervexa" width="260" />
 
-# Understand the code. See the interaction.
+# Your code has a structure. Your changes have consequences.
 
 **A 3D developer workspace for revision-pinned source, dependency exploration, and pull-request interaction analysis.**
 
@@ -12,9 +12,9 @@
 
 </div>
 
-![Intervexa live homepage with interactive 3D architecture](docs/images/three-dimensional-home.png)
+![Intervexa live homepage with interactive 3D architecture](docs/images/premium-home.jpg)
 
-*Real application screenshot. The public architecture scene is a labeled conceptual example; connected repository views use indexed source. Interactive orbit, zoom, selection and fullscreen are available in the live app.*
+*Real application screenshot. The public architecture scene is a labeled conceptual example; connected repository views use indexed source. Interactive orbit, pan, zoom, fit-to-view, search, type filters, relationship traversal, 2D fallback and fullscreen are available in the live app.*
 
 ## The problem worth solving
 
@@ -32,13 +32,24 @@ It is an early-access engineering project: static results are advisory hypothese
 
 | Capability | What it demonstrates |
 | --- | --- |
-| Spatial code explorer | Custom Three.js geometry, curved relationships, demand rendering, orbit/zoom/fullscreen, keyboard controls and an isometric fallback |
+| Spatial code explorer | Custom Three.js geometry, typed AST entities, source navigation, relationship traversal, search/filter/pagination, pan/orbit/zoom/fit, demand rendering and accessible 2D fallback |
 | Repository intelligence | Bounded concurrent fetching, Python AST symbols/imports, exact-commit source and lexical retrieval |
 | PR interaction analysis | Scoped signature/return-key comparison, bounded pair selection, immutable snapshots and explicit uncertainty |
 | Reliable background work | Persistent database queue, deduplication, bounded retries, leases, cancellation and stale-revision detection |
 | Secure account workflows | Google/GitHub OAuth, explicit identity linking, Argon2 passwords, opaque hashed sessions, origin/CSRF and tenant checks |
 | Optional BYOK assistance | Ephemeral provider keys, consent-bound source excerpts, citation checks and optional semantic embeddings |
 | Practical workspace | Analysis history, findings, execution evidence, usage, profile, appearance, audit and export |
+
+## Built for a developer who needs the evidence
+
+The interface pairs a restrained midnight workspace with warm editorial product sections. One primary 3D scene introduces the product; the authenticated explorer uses actual indexed files, imports and Python declarations. PR relationships have their own evidence diagram rather than a recycled architecture animation.
+
+- **Find the relevant code:** switch repositories, filter entities, search files or symbols, traverse incoming/outgoing relationships and open pinned source.
+- **Understand a potential interaction:** review two PR revisions, shared files, changed identifiers, static findings and explicitly separated execution evidence.
+- **Recover from failure:** bounded request deadlines, readable service errors, retry controls and an immediately usable workspace shell.
+- **Use it on your device:** responsive navigation checked at 1440, 1280, 768 and 390 pixels; reduced-motion and WebGL-unavailable users receive the same evidence controls in 2D.
+
+For engineering reviewers: [redesign decisions and verification](docs/premium-redesign-report.md), [architecture](docs/architecture.md), [security and scope](docs/STATUS.md), and [real integration evidence](docs/github-integration-report.md). This is a working implementation with documented boundaries, not a claim that static analysis proves every defect.
 
 ## Real GitHub workflow, not a seeded demo
 
@@ -53,22 +64,29 @@ A dedicated private repository was created, pushed and pulled from this account.
 
 The deployed application discovered the repository, synchronized both PRs, and produced a source-grounded potential interaction identifying the removed `token` return key. A real push also invalidated the old snapshot and automatically triggered fresh analysis. The hosted result correctly remained **inconclusive** because its isolated runner is not configured. Local execution is separate evidence, not a claim of hosted sandbox verification.
 
-![Real production finding from controlled GitHub pull requests](docs/images/live-pr-finding.png)
+![Real production finding from controlled GitHub pull requests](docs/images/premium-finding.jpg)
+
+![Persisted PR revisions and advisory relationship diagram](docs/images/premium-pr-evidence.jpg)
+
+*The live interaction explorer shows actual PR head revisions and shared changed identifiers. Zero shared files is shown honestly; a relationship is not a verified defect.*
 
 ## Engineering evidence
 
-![Real main-branch repository index and spatial map](docs/images/live-repository-map.png)
+![Real main-branch repository index and spatial map](docs/images/premium-repository-map.jpg)
 
-*The private integration fixture indexed four files at its exact baseline SHA; source search and Python import relationships were verified through the deployed application.*
+*The real private integration fixture supplies four indexed files and four Python declaration nodes at its baseline SHA. The selected function exposes its exact `auth.py:1` source and incoming declaration relationship; dynamic calls remain unresolved.*
 
 | Check | Latest result |
 | --- | --- |
-| Backend regression suite | **182 passed** |
-| Browser workflows | **11 passed** |
+| Backend regression suite | **185 passed** |
+| Browser workflows | **14 passed** |
 | Named acceptance scenarios | **100 / 100 passed** |
 | Repeated controlled Git-state runs | **100 / 100 matched expected behavior**: 75 isolated-state passes, 25 intentional combined-state failures |
 | TypeScript, ESLint and production build | Passed in the validated release; CI checks every push |
-| Live integrations | Google sign-in, GitHub App discovery, PR sync, pinned indexing and static analysis verified |
+| Live integrations | Existing Google/GitHub sign-in configuration preserved; GitHub discovery, pinned source/search, PR sync and fresh static analysis reverified after redesign |
+| Contact notifications | Production Resend message confirmed delivered; durable bounded retries |
+
+The redesign release passed [GitHub CI run #15](https://github.com/Lingu17/intervexa/actions/runs/38133640399) and deployed to both services. A fresh production analysis completed in 18.73 seconds with one advisory finding and an honest unavailable-runner result.
 
 The 100 scenarios exposed 11 initial failures that were fixed: signature distinctions, file/scope matching, nested return isolation and malformed runner evidence. Counts establish behavior on defined examples; they do not imply 100% general AI accuracy. See the [acceptance report](docs/acceptance-report.md) and [real GitHub report](docs/github-integration-report.md).
 
@@ -102,7 +120,7 @@ For local development, use **Node 24, Python 3.14 and Git**. The full commands, 
 
 ## Current scope
 
-Python static contracts and module-path imports are supported. Dynamic calls, fully resolved cross-language dependency graphs, higher-order PR interactions, SQL migration semantics, email recovery/delivery and multi-owner workspaces remain unfinished. Production AI and isolated execution require separately configured services. There is no uptime, compliance or universal accuracy claim.
+Python static contracts and module-path imports are supported. Dynamic calls, fully resolved cross-language dependency graphs, higher-order PR interactions, SQL migration semantics, email verification/password recovery and multi-owner workspaces remain unfinished. Production AI and isolated execution require separately configured services. There is no uptime, compliance or universal accuracy claim.
 
 This repository is private. Recruiters need repository access to inspect the source; the live homepage remains shareable.
 
@@ -136,7 +154,7 @@ Open **http://localhost:3000** or **http://127.0.0.1:3000**. Both exact local al
 
 From a connected repository, select **Explore code & architecture**, load authorized branches and index one. Browse pinned source/symbols, search paths/identifiers, inspect Python module imports and review explicit coverage. Optional semantic retrieval creates bounded OpenAI vectors only with paid consent. Repository Q&A retrieves four source excerpts and rejects invalid path/line citations; interpretation still needs review. No index or AI workflow executes repository code.
 
-Google/GitHub social sign-in reuses secure database sessions and requires owner-configured client credentials. Existing-email collisions require authenticated account linking. Password recovery/email verification remain unavailable without a verified delivery service. Account settings provide profile/workspace editing, initials avatars, a bounded JSON export and confirmed personal account deletion. The public contact form stores real submissions, with validation, spam/rate controls and 90-day retention. Optional Resend team notifications use a durable queue with bounded retries and idempotency; see [email setup](docs/contact-email.md).
+Google/GitHub social sign-in reuses secure database sessions and requires owner-configured client credentials. Existing-email collisions require authenticated account linking. Password recovery/email verification are not implemented; configured contact notifications do not enable those separate flows. Account settings provide profile/workspace editing, initials avatars, a bounded JSON export and confirmed personal account deletion. The public contact form stores real submissions, with validation, spam/rate controls and 90-day retention. Optional Resend team notifications use a durable queue with bounded retries and idempotency; see [email setup](docs/contact-email.md).
 
 See [exact OAuth/GitHub/provider configuration](docs/integrations.md), [architecture](docs/architecture.md) and [troubleshooting](docs/troubleshooting.md). Secret values belong in backend/hosting settings, never chat or frontend public variables.
 
@@ -193,6 +211,6 @@ Argon2 passwords, hashed opaque database sessions, HTTP-only cookies, CSRF heade
 
 This is **not a completed production SaaS**. Email verification/recovery, invitations/SSO, higher-order combinations, cross-language resolved contracts, SQL migration semantics, private-repository runner access, dependency installation, automatic causal attribution, and high-assurance hostile-code isolation remain unfinished. No SOC 2, penetration test, trademark clearance, domain availability, or uptime guarantee is claimed. Frontend/backend deployment, PostgreSQL readiness and live account/repository workflows are verified.
 
-See [engineering status](docs/STATUS.md), [deployment and free-tier assessment](docs/deployment.md), and [brand guide](docs/brand-guidelines.md). Open [the live application](https://intervexa-web.onrender.com/login) and sign in with Google or GitHub. Both access the owner workspace after explicit linking. The backend and Supabase migrations are live; repository indexing and architecture work. Free services can cold start. Email recovery/delivery, live AI and isolated execution remain unavailable until their required services are configured.
+See [engineering status](docs/STATUS.md), [deployment and free-tier assessment](docs/deployment.md), and [brand guide](docs/brand-guidelines.md). Open [the live application](https://intervexa-web.onrender.com/login) and sign in with Google or GitHub. Both access the owner workspace after explicit linking. The backend and Supabase migrations are live; repository indexing and architecture work. Free services can cold start. Contact notifications are configured and one production message was confirmed delivered by Resend. Password recovery/email verification, live AI and isolated execution still require further implementation or infrastructure.
 
 </details>
