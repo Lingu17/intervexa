@@ -19,11 +19,47 @@ export function Auth({ register = false }: { register?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [social, setSocial] = useState<{ google: boolean; github: boolean }>();
   const [connectionError, setConnectionError] = useState(false);
+  const [socialBusy, setSocialBusy] = useState<string | null>(null);
   useEffect(() => {
     readApi<{ google: boolean; github: boolean }>("/auth/capabilities")
       .then(setSocial)
       .catch(() => setConnectionError(true));
   }, []);
+  async function startSocial(provider: "google" | "github") {
+    if (socialBusy) return;
+    setSocialBusy(provider);
+    setError("");
+    try {
+      // Only retry read-only readiness checks, never OAuth callbacks or login POSTs.
+      let ready = false;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        try {
+          const response = await fetch("/api/ready", {
+            cache: "no-store",
+            signal: AbortSignal.timeout(8_000),
+          });
+          if (response.ok) {
+            ready = true;
+            break;
+          }
+        } catch {
+          /* A sleeping service may temporarily reject connections. */
+        }
+        if (attempt < 7)
+          await new Promise((resolve) => setTimeout(resolve, 2_000));
+      }
+      if (!ready)
+        throw new Error(
+          "Sign-in service is temporarily unavailable. Please try again in a minute.",
+        );
+      window.location.assign(
+        `/api/auth/oauth/${provider}?origin=${encodeURIComponent(window.location.origin)}`,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+      setSocialBusy(null);
+    }
+  }
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
@@ -95,15 +131,23 @@ export function Auth({ register = false }: { register?: boolean }) {
               <button
                 key={provider}
                 className="button secondary"
-                disabled={social !== undefined && !social[provider]}
-                onClick={() => {
-                  window.location.href = `/api/auth/oauth/${provider}?origin=${encodeURIComponent(window.location.origin)}`;
-                }}
+                disabled={
+                  busy ||
+                  socialBusy !== null ||
+                  (social !== undefined && !social[provider])
+                }
+                onClick={() => void startSocial(provider)}
               >
                 Continue with {provider === "google" ? "Google" : "GitHub"}
               </button>
             ))}
           </div>
+          {socialBusy && (
+            <p className="helper" role="status">
+              Preparing secure sign-in… The free service may need a moment to
+              wake up.
+            </p>
+          )}
           {connectionError && (
             <p className="helper">
               The service is waking up. You can still continue with Google or
@@ -166,7 +210,7 @@ export function Auth({ register = false }: { register?: boolean }) {
                 {error}
               </div>
             )}
-            <button className="button" disabled={busy}>
+            <button className="button" disabled={busy || socialBusy !== null}>
               {busy ? "Connecting…" : register ? "Create workspace" : "Sign in"}{" "}
               <ArrowRight size={15} />
             </button>
