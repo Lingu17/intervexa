@@ -24,7 +24,7 @@ This iteration extends the existing Next.js/FastAPI/SQLAlchemy application. Base
 - Short-lived (15-second) tab-memory reads coalesce concurrent requests and make return navigation immediate while fresh. Mutations, logout and 401 clear cached data; nothing is persisted to browser storage.
 - Repository indexing fetches four pinned files at a time over reused GitHub HTTP connections. Actual source-byte bounds and deterministic order are tested despite concurrent completion and inaccurate upstream sizes.
 - Synchronous database polling/maintenance runs in a worker thread rather than blocking HTTP's event loop. Cleanup runs once per minute instead of every two seconds; atomic job claims, lease recovery and bounded retries remain in place.
-- Before deployment of this update, two warm production /me requests measured 5.982 and 5.017 seconds. Hosting/network latency remains separate from browser rendering; Render Free still sleeps after inactivity. Final deployment and speed checks are required before claiming a speedup.
+- Both Render services deployed commit 5d61f26 successfully; GitHub Actions run 6 passed. Two warm production /me requests improved from 5.982 and 5.017 seconds (mean 5.50) to 1.257 and 1.229 seconds (mean 1.24), about 77% faster in this small workstation sample. Other measured workspace endpoints returned in 1.21–1.50 seconds. These are warm request timings, not an availability guarantee; Render Free still sleeps after inactivity. Production registration, password login/logout, secure cookies, origin/CSRF guards, preferences and disposable-account cleanup passed again. The owner repository refreshed successfully to 5d61f26 with 60 revision-pinned files.
 
 ## Verification
 
