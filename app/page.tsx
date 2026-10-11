@@ -13,6 +13,7 @@ import { PublicFooter } from "@/components/public-footer";
 import { Graph } from "@/components/graph";
 import { ProductDemo } from "@/components/product-demo";
 import { ContactForm } from "@/components/contact-form";
+import { HomeGuide } from "@/components/home-guide";
 export default function Home() {
   return (
     <>
@@ -278,6 +279,7 @@ export default function Home() {
             ))}
           </div>
         </section>
+        <HomeGuide />
         <section className="home-faq">
           <h2>Before you connect.</h2>
           {[

@@ -212,7 +212,7 @@ export function Workspace() {
         id="workspace-navigation"
         className={"sidebar" + (open ? " open" : "")}
       >
-        <Link href="/app" className="sidebar-logo">
+        <Link href="/" className="sidebar-logo" aria-label="Intervexa home">
           <Logo compact light={light} />
         </Link>
         <div className="workspace-switch">
