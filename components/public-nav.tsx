@@ -9,7 +9,7 @@ export function PublicNav() {
       </Link>
       <nav>
         <Link href="/product">Product</Link>
-        <Link href="/#how-to-use">How to use</Link>
+        <a href="/#how-to-use">How to use</a>
         <Link href="/architecture">Architecture</Link>
         <Link href="/pricing">Pricing</Link>
         <Link href="/docs">Docs</Link>
