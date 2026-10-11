@@ -48,22 +48,25 @@ export async function api<T>(
   body?: unknown,
 ): Promise<T> {
   if (method !== "GET") clearApiCache();
-  const response = await fetch("/api" + path, {
+  let response: Response;
+  try {
+    response = await fetch("/api" + path, {
     method,
     credentials: "same-origin",
     cache: "no-store",
+    signal: AbortSignal.timeout(path.endsWith("/index") ? 195_000 : path.includes("/verify") || path.includes("/execute") ? 250_000 : path.includes("/generate") || path.includes("/question") || path.includes("/semantic-search") || path.includes("/embeddings") ? 90_000 : 30_000),
     headers: {
       "Content-Type": "application/json",
       ...(method !== "GET" ? { "X-CSRF-Token": csrf } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  const data = await response.json().catch(() => ({
-    detail:
-      response.status === 502 || response.status === 504
-        ? "The service is starting or the request timed out. Retry shortly; refresh to check whether your work completed."
-        : "The server returned an unreadable response.",
-  }));
+  } catch {
+    throw new ApiError("The service could not be reached or timed out. Retry shortly; refresh to check whether your work completed.", 0);
+  }
+  let data;
+  try { data = await response.json(); }
+  catch { throw new ApiError(response.status === 502 || response.status === 504 ? "The service is starting or the request timed out. Retry shortly; refresh to check whether your work completed." : "The server returned an unreadable response. Please retry.", response.status); }
   if (!response.ok) {
     if (response.status === 401) clearApiCache();
     throw new ApiError(
@@ -89,6 +92,7 @@ export type Repo = {
   full_name: string;
   default_branch: string;
   pull_requests: number;
+  index?: { sha: string; branch: string; created_at: number } | null;
   policy: {
     max_pairs: number;
     retention_days: number;

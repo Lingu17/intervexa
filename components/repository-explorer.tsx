@@ -74,6 +74,15 @@ export function RepositoryExplorer({ id }: { id: string }) {
   useEffect(() => {
     void reload();
   }, [reload]);
+  const requestedFile = params.get("file");
+  useEffect(() => {
+    if (!requestedFile) return;
+    let active = true;
+    void api<SourceFile>(root + "/file?path=" + encodeURIComponent(requestedFile)).then(data => {
+      if (active) { setFile(data); setTab("files"); }
+    }).catch(e => { if (active) setError(e.message); });
+    return () => { active = false; };
+  }, [root, requestedFile]);
   async function act(action: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -347,6 +356,7 @@ export function RepositoryExplorer({ id }: { id: string }) {
               nodes={index.graph.nodes}
               edges={index.graph.edges}
               conceptual={false}
+              onOpenSource={openFile}
             />
           ) : tab === "dependencies" ? (
             <section className="panel">

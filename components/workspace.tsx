@@ -44,6 +44,8 @@ import { AccountSettings } from "./account-settings";
 import { CommandMenu } from "./command-menu";
 import { UsagePage } from "./usage";
 import { WorkspaceAtlas } from "./workspace-atlas";
+import { RepositorySwitcher } from "./repository-switcher";
+import { InteractionEvidence } from "./interaction-evidence";
 
 function useData<T>(path: string) {
   const [data, setData] = useState<T | undefined>(() => cachedValue<T>(path));
@@ -224,6 +226,7 @@ export function Workspace() {
             <small>Repository intelligence</small>
           </div>
         </div>
+        {me && <RepositorySwitcher />}
         <nav className="sidebar-nav">
           {navigation.map(({ href, title, icon: Icon }) => (
             <Link
@@ -792,6 +795,7 @@ function Repositories({ me }: { me: Me }) {
               <p>
                 {r.pull_requests} open PRs · {r.default_branch} · Advisory
               </p>
+              <div className="repo-index-status"><span className={r.index ? "status-dot" : "index-pending"}/>{r.index ? `Indexed / ${r.index.branch} · ${r.index.sha.slice(0, 8)}` : "Not indexed · open to select a branch"}</div>
               <span className="text-link">
                 Open repository <ArrowRight size={13} />
               </span>
@@ -1604,6 +1608,7 @@ function Interactions() {
               <Badge value={f.status} />
             </div>
             <div className="panel-body">
+              <InteractionEvidence finding={f} />
               <div
                 style={{
                   display: "flex",

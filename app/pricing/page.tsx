@@ -5,7 +5,7 @@ export default function Pricing() {
   return (
     <>
       <PublicNav />
-      <main className="public-content">
+      <main className="public-content pricing-page">
         <div className="eyebrow">FREE-FIRST. NO HIDDEN INFERENCE.</div>
         <h1>
           Start with evidence.

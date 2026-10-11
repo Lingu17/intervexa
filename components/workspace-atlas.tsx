@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -8,7 +9,7 @@ import {
   GitPullRequest,
   Search,
 } from "lucide-react";
-import { readApi, type Repo } from "@/lib/api";
+import { readApi, ApiError, type Repo } from "@/lib/api";
 import {
   type ArchitectureNode,
   type ArchitectureEdge,
@@ -19,20 +20,26 @@ type MapData = {
   graph: { nodes: ArchitectureNode[]; edges: ArchitectureEdge[] };
 };
 export function WorkspaceAtlas({ repositories }: { repositories?: Repo[] }) {
+  const router = useRouter();
   const [map, setMap] = useState<MapData>();
-  const repo = repositories?.[0];
+  const [selectedId, setSelectedId] = useState("");
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const repo = repositories?.find(r => r.id === selectedId) || repositories?.[0];
   useEffect(() => {
     let active = true;
+    setMap(undefined);
+    setError("");
     if (repo)
       void readApi<MapData>(`/repositories/${repo.id}/intelligence`)
         .then((data) => {
           if (active) setMap(data);
         })
-        .catch(() => {});
+        .catch((e) => { if (active) setError(e instanceof ApiError && e.status === 404 ? "This repository has no pinned index. Open the explorer to index a branch." : e.message || "The code map could not load."); });
     return () => {
       active = false;
     };
-  }, [repo]);
+  }, [repo, retry]);
   const href = repo ? `/app/repositories/${repo.id}` : "/app/repositories";
   const nodes: ArchitectureNode[] =
     map?.graph.nodes ||
@@ -55,11 +62,14 @@ export function WorkspaceAtlas({ repositories }: { repositories?: Repo[] }) {
             {map ? `REV / ${map.sha.slice(0, 7)}` : "YOUR CONNECTED SOURCE"}
           </span>
         </div>
+        {!!repositories?.length && <label className="atlas-selector">Repository to explore<select aria-label="Choose atlas repository" value={repo?.id || ""} onChange={e => setSelectedId(e.target.value)}>{repositories.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}</select></label>}
+        {error && <div className="atlas-map-error" role="status">{error}<button className="text-link" onClick={() => setRetry(retry + 1)}>Retry map</button></div>}
         {nodes.length ? (
           <Graph
             nodes={nodes}
             edges={map?.graph.edges || []}
             conceptual={false}
+            onOpenSource={(path) => { router.push(`${href}/explore?file=${encodeURIComponent(path)}`); }}
           />
         ) : (
           <div className="atlas-empty">

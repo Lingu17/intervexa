@@ -6,7 +6,6 @@ import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { api, setCsrf, readApi } from "@/lib/api";
 import { Logo } from "./logo";
-import { Graph } from "./graph";
 const schema = z.object({
   email: z.email(),
   password: z.string().min(12, "Use at least 12 characters.").max(128),
@@ -108,7 +107,7 @@ export function Auth({ register = false }: { register?: boolean }) {
             A shared workspace for your repositories, integration hypotheses,
             and reproduction evidence.
           </p>
-          <Graph />
+          <div className="auth-journey"><code>01 / IDENTITY</code><strong>Your account opens the workspace.</strong><span className="auth-journey-line"/><code>02 / ACCESS</code><strong>You choose what GitHub shares.</strong><span className="auth-journey-line"/><code>03 / CONTEXT</code><strong>Pin a revision. Explore the source.</strong><p>Understand the code. See the interaction. Verify the change.</p></div>
         </div>
         <p className="helper">
           Your source stays scoped to your workspace. Provider keys are never

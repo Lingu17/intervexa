@@ -4,8 +4,10 @@ export type ArchitectureNode = {
   kind: string;
   detail?: string;
   status?: string;
+  path?: string;
+  line?: number;
 };
-export type ArchitectureEdge = { source: string; target: string; kind: string };
+export type ArchitectureEdge = { source: string; target: string; kind: string; line?: number };
 export const conceptualNodes: ArchitectureNode[] = [
   {
     id: "repository",

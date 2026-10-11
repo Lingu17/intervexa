@@ -174,7 +174,16 @@ def graph(index):
     edges = []
     for file in index.files:
         path = file["path"]
-        nodes.append({"id": path, "label": path, "kind": "file", "symbols": len(file["symbols"])})
+        nodes.append(
+            {
+                "id": path,
+                "label": path,
+                "kind": "file",
+                "path": path,
+                "symbols": len(file["symbols"]),
+                "detail": f"{len(file['symbols'])} Python declarations in the indexed revision.",
+            }
+        )
         edges.append({"source": "repository", "target": path, "kind": "contains"})
         for imp in file["imports"]:
             module = imp["module"]
@@ -189,10 +198,30 @@ def graph(index):
             for target in (stem + ".py", stem + "/__init__.py"):
                 if target in paths and target != path:
                     edges.append({"source": path, "target": target, "kind": "import", "line": imp["line"]})
+    symbol_count = 0
+    omitted_symbols = 0
+    for file in index.files:
+        for symbol in file["symbols"]:
+            if symbol_count >= 240:
+                omitted_symbols += 1
+                continue
+            symbol_id = f"{file['path']}#symbol:{symbol['line']}:{symbol['name']}"
+            nodes.append(
+                {
+                    "id": symbol_id,
+                    "label": symbol["name"],
+                    "kind": symbol["kind"],
+                    "path": file["path"],
+                    "line": symbol["line"],
+                    "detail": f"Python AST declaration at {file['path']}:{symbol['line']}; calls are unresolved.",
+                }
+            )
+            edges.append({"source": file["path"], "target": symbol_id, "kind": "declares"})
+            symbol_count += 1
     return {
         "nodes": nodes,
         "edges": edges,
-        "notice": "Python module-path matches only; dynamic imports, aliases and calls are unresolved.",
+        "notice": f"Python module-path matches and AST declarations only; dynamic imports, aliases and calls are unresolved. {omitted_symbols} declarations omitted by the 240-symbol graph bound.",
     }
 
 

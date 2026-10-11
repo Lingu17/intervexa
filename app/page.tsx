@@ -14,11 +14,12 @@ import { Graph } from "@/components/graph";
 import { ProductDemo } from "@/components/product-demo";
 import { ContactForm } from "@/components/contact-form";
 import { HomeGuide } from "@/components/home-guide";
+import { ProductProof, ReviewWorkflow, ArchitectureIntelligence, AccessPricing } from "@/components/product-story";
 export default function Home() {
   return (
     <>
       <PublicNav />
-      <main className="marketing new-marketing">
+      <main className="marketing new-marketing premium-marketing">
         <section className="architecture-hero">
           <div className="hero-copy">
             <div className="eyebrow">
@@ -26,23 +27,19 @@ export default function Home() {
               ACCESS
             </div>
             <h1>
-              Understand the code.
+              Your code has a structure.
               <br />
-              See the <span>interaction.</span>
+              Your changes have <span>consequences.</span>
             </h1>
             <p className="hero-description">
-              Explore the dependencies behind your changes.
-              <br />
-              Find what passing pull requests miss together.
-              <br />
-              Follow the evidence all the way to verification.
+              Map the architecture behind your repository, discover how pending pull requests intersect, and follow the evidence before you merge.
             </p>
             <div className="hero-actions">
-              <Link className="button" href="/register">
-                Create your workspace <ArrowRight size={16} />
+              <Link className="button" href="/app">
+                Open your workspace <ArrowRight size={16} />
               </Link>
-              <a href="#demo" className="text-link">
-                Explore the example ↓
+              <a href="#architecture" className="text-link">
+                Explore the architecture ↓
               </a>
             </div>
             <p className="hero-note">
@@ -65,12 +62,13 @@ export default function Home() {
           </div>
         </section>
         <div className="editorial-strip">
-          <strong>Every change. Every interaction. Verified.</strong>
+          <strong>Understand the code. See the interaction. Verify the change.</strong>
           <span>
             Repository understanding → integration hypotheses → reproducible
             evidence
           </span>
         </div>
+        <ProductProof />
         <section className="product-pillars">
           <div className="section-heading">
             <div className="eyebrow">ONE REPOSITORY. THREE PERSPECTIVES.</div>
@@ -113,6 +111,8 @@ export default function Home() {
             ))}
           </div>
         </section>
+        <ReviewWorkflow />
+        <div id="architecture"><ArchitectureIntelligence /></div>
         <section className="demo-section" id="demo">
           <div>
             <div className="eyebrow">THE BUG BETWEEN TWO GREEN CHECKS</div>
@@ -260,17 +260,19 @@ export default function Home() {
           <div>
             {[
               [
-                "Solo & freelance",
+                "Solo developers",
                 "Recover context between client projects and inspect shared assumptions before shipping.",
               ],
               [
-                "Open source & students",
+                "Open-source contributors",
                 "Learn unfamiliar codebases, trace module dependencies and review incoming changes.",
               ],
               [
-                "Startups & engineering teams",
+                "Startup teams",
                 "Bring pending work into one evidence workflow. Current workspaces have one owner; invitations are not implemented.",
               ],
+              ["Students", "Build a mental model of unfamiliar Python code. Read declarations alongside the source instead of guessing from a diagram."],
+              ["Freelancers", "Recover the structure of a client project and inspect pending changes before switching contexts."],
             ].map(([title, text]) => (
               <article key={title}>
                 <h3>{title}</h3>
@@ -280,6 +282,7 @@ export default function Home() {
           </div>
         </section>
         <HomeGuide />
+        <AccessPricing />
         <section className="home-faq">
           <h2>Before you connect.</h2>
           {[
@@ -295,6 +298,10 @@ export default function Home() {
               "What happens when execution is unavailable?",
               "You can explore code and inspect hypotheses. Verification stays unavailable until a separate supported runner is configured.",
             ],
+            ["Which repositories and languages are supported?", "Authorized GitHub repositories can be indexed within the configured bounds. Python supports AST declarations and contract analysis; selected other text files support search, not a resolved dependency graph."],
+            ["How is GitHub access authorized?", "Sign-in identifies you. A separate GitHub App installation grants access only to selected repositories, and the server checks workspace ownership."],
+            ["How is a defect verified?", "The reviewed test must pass on the baseline and individual changes and expose the same supported assertion failure on repeated combined states. Static hypotheses and infrastructure errors cannot satisfy this protocol."],
+            ["How is source data handled?", "Bounded source is pinned to a commit and retained under repository policy. Optional AI operations require explicit consent. Provider keys stay in request-scoped memory."],
           ].map(([q, a]) => (
             <details key={q}>
               <summary>{q}</summary>
@@ -303,6 +310,7 @@ export default function Home() {
           ))}
           <Link href="/faq">All frequently asked questions →</Link>
         </section>
+        <section className="final-workspace-cta"><span className="eyebrow">YOUR NEXT REVIEW, IN CONTEXT</span><h2>Understand what you’re<br/>about to change.</h2><Link className="button" href="/register">Create your workspace <ArrowRight size={16}/></Link><Link className="text-link" href="/docs">Read the documentation →</Link></section>
         <section className="contact-section">
           <div>
             <div className="eyebrow">BUILD WITH US</div>

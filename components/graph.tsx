@@ -1,7 +1,7 @@
 "use client";
-import { Component, useEffect, useRef, useState } from "react";
+import { Component, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Maximize2 } from "lucide-react";
+import { Maximize2, Search, ArrowRight, Box, Layers } from "lucide-react";
 import {
   ArchitectureNode,
   ArchitectureEdge,
@@ -135,139 +135,97 @@ class Boundary extends Component<
     return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
-export function Graph({
-  nodes = conceptualNodes,
-  edges = conceptualEdges,
-  conceptual = true,
-}: {
+export function Graph({ nodes = conceptualNodes, edges = conceptualEdges, conceptual = true, onOpenSource }: {
   nodes?: ArchitectureNode[];
   edges?: ArchitectureEdge[];
   conceptual?: boolean;
+  onOpenSource?: (path: string, line?: number) => void;
 }) {
-  const [enabled, setEnabled] = useState(false),
-    [selected, setSelected] = useState(0);
+  const [available, setAvailable] = useState(false);
+  const [flat, setFlat] = useState(false);
+  const [selectedId, setSelectedId] = useState(nodes[0]?.id || "");
+  const [query, setQuery] = useState("");
+  const [kind, setKind] = useState("all");
+  const [page, setPage] = useState(0);
+  const [viewError, setViewError] = useState("");
   const stage = useRef<HTMLDivElement>(null);
   const container = useRef<HTMLDivElement>(null);
-  const [viewError, setViewError] = useState("");
-  const visible = nodes.slice(0, 25);
-  const visibleIds = new Set(visible.map((node) => node.id));
-  const visibleEdges = edges
-    .filter(
-      (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
-    )
-    .slice(0, 90);
+  const filtered = useMemo(() => nodes.filter(n =>
+    (kind === "all" || n.kind === kind) && `${n.label} ${n.path || ""}`.toLowerCase().includes(query.toLowerCase())), [nodes, kind, query]);
+  const lastPage = Math.max(0, Math.ceil(filtered.length / 25) - 1);
+  const currentPage = Math.min(page, lastPage);
+  const visible = useMemo(() => filtered.slice(currentPage * 25, currentPage * 25 + 25), [filtered, currentPage]);
+  const visibleIds = new Set(visible.map(n => n.id));
+  const visibleEdges = edges.filter(e => visibleIds.has(e.source) && visibleIds.has(e.target)).slice(0, 90);
+  const selected = Math.max(0, visible.findIndex(n => n.id === selectedId));
+  const node = visible[selected];
+  const relationships = edges.filter(e => e.source === node?.id || e.target === node?.id);
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
-    function update() {
+    function detect() {
       try {
-        const context = media.matches
-          ? null
-          : document.createElement("canvas").getContext("webgl2");
-        setEnabled(!!context);
+        const context = media.matches ? null : document.createElement("canvas").getContext("webgl2");
+        setAvailable(!!context);
         context?.getExtension("WEBGL_lose_context")?.loseContext();
-      } catch {
-        setEnabled(false);
-      }
+      } catch { setAvailable(false); }
     }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          update();
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "120px" },
-    );
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { detect(); observer.disconnect(); }
+    }, { rootMargin: "120px" });
     if (stage.current) observer.observe(stage.current);
-    media.addEventListener("change", update);
-    return () => {
-      observer.disconnect();
-      media.removeEventListener("change", update);
-    };
+    media.addEventListener("change", detect);
+    return () => { observer.disconnect(); media.removeEventListener("change", detect); };
   }, []);
-  const node = visible[selected] || visible[0];
-  const fallback = (
-    <Fallback
-      nodes={visible}
-      edges={visibleEdges}
-      selected={selected}
-      onSelect={setSelected}
-    />
-  );
+  function selectRelated(id: string) {
+    setQuery(""); setKind("all");
+    const index = nodes.findIndex(n => n.id === id);
+    setPage(Math.max(0, Math.floor(index / 25))); setSelectedId(id);
+  }
+  const fallback = <Fallback nodes={visible} edges={visibleEdges} selected={selected} onSelect={i => setSelectedId(visible[i].id)} />;
   return (
-    <div
-      ref={container}
-      className={"architecture-view" + (visible.length <= 5 ? " compact" : "")}
-    >
-      <div className="graph-wrap" ref={stage}>
-        <div className="graph-grid" />
-        <span className="graph-label">
-          {conceptual
-            ? "CONCEPTUAL DEMO · NOT YOUR REPOSITORY"
-            : "PINNED REPOSITORY · MODULE PATH MATCHES"}
-        </span>
-        <button
-          className="graph-expand"
-          aria-label="Expand code map"
-          onClick={() => {
+    <div ref={container} className={"architecture-view graph-workbench" + (visible.length <= 5 ? " compact" : "")}>
+      <div className="graph-toolbar">
+        <label className="graph-search"><Search size={14} /><input aria-label="Search graph files or symbols" placeholder="Find a file or symbol…" value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} /></label>
+        <select aria-label="Filter graph entity type" value={kind} onChange={e => { setKind(e.target.value); setPage(0); }}>
+          <option value="all">All entities</option>
+          {[...new Set(nodes.map(n => n.kind))].sort().map(k => <option key={k} value={k}>{k}</option>)}
+        </select>
+        <button className="graph-mode" aria-pressed={flat} onClick={() => setFlat(!flat)}>{flat ? <Box size={14}/> : <Layers size={14}/>} {flat ? "3D view" : "2D view"}</button>
+      </div>
+      <div className="graph-work-area">
+        <div className="graph-wrap" ref={stage}>
+          <div className="graph-grid" />
+          <span className="graph-label">{conceptual ? "CONCEPTUAL DEMO · NOT YOUR REPOSITORY" : "PINNED REPOSITORY · MODULE PATH MATCHES"}</span>
+          <button className="graph-expand" aria-label="Expand code map" onClick={() => {
             setViewError("");
-            const action = document.fullscreenElement
-              ? document.exitFullscreen()
-              : container.current?.requestFullscreen();
-            void action?.catch(() =>
-              setViewError(
-                "Fullscreen is unavailable in this browser. The map remains interactive here.",
-              ),
-            );
-          }}
-        >
-          <Maximize2 size={14} />
-        </button>
-        <Boundary fallback={fallback}>
-          {enabled ? (
-            <Scene
-              nodes={visible}
-              edges={visibleEdges}
-              selected={selected}
-              onSelect={setSelected}
-            />
-          ) : (
-            fallback
-          )}
-        </Boundary>
+            const action = document.fullscreenElement ? document.exitFullscreen() : container.current?.requestFullscreen();
+            void action?.catch(() => setViewError("Fullscreen is unavailable. The map remains interactive here."));
+          }}><Maximize2 size={14}/></button>
+          {!visible.length ? <div className="graph-no-results" role="status">No entities match. Clear the search or change the filter.</div> :
+            <Boundary key={flat ? "flat" : "spatial"} fallback={fallback}>{available && !flat ? <Scene nodes={visible} edges={visibleEdges} selected={selected} onSelect={i => setSelectedId(visible[i].id)} /> : fallback}</Boundary>}
+        </div>
+        <aside className="module-details" aria-live="polite">
+          <span className="eyebrow">{node?.kind || "SELECTION"}{node?.status ? ` / ${node.status}` : ""}</span>
+          <strong>{node?.label || "No matching entities"}</strong>
+          {node?.path && <code>{node.path}{node.line ? `:${node.line}` : ""}</code>}
+          <p>{node?.detail || `${relationships.length} indexed relationships. These are module-path matches, not a resolved call graph.`}</p>
+          {node?.path && onOpenSource && <button className="button secondary small" onClick={() => onOpenSource(node.path!, node.line)}>Open pinned source <ArrowRight size={13}/></button>}
+          <div className="relationship-list">
+            <span className="eyebrow">INCOMING / OUTGOING</span>
+            {relationships.slice(0, 40).map((e, i) => {
+              const outgoing = e.source === node?.id;
+              const target = nodes.find(n => n.id === (outgoing ? e.target : e.source));
+              return target && <button key={`${e.source}:${e.target}:${i}`} onClick={() => selectRelated(target.id)}><small>{outgoing ? "OUT" : "IN"} · {e.kind}</small><span>{target.label}</span></button>;
+            })}
+            {!relationships.length && <p>No relationships in the indexed scope.</p>}
+            {relationships.length > 40 && <p>First 40 of {relationships.length} relationships. Use the dependency list for module imports.</p>}
+          </div>
+        </aside>
       </div>
-      <div className="module-details" aria-live="polite">
-        <span className="eyebrow">
-          {node?.kind} {node?.status ? ` / ${node.status}` : ""}
-        </span>
-        <strong>{node?.label || "No modules indexed"}</strong>
-        <p>
-          {node?.detail ||
-            `${visibleEdges.filter((e) => e.source === node?.id || e.target === node?.id).length} visible relationships. Browse the file for revision-pinned source evidence.`}
-        </p>
-      </div>
-      <div className="module-controls" aria-label="Select architecture module">
-        {visible.map((n, i) => (
-          <button
-            key={n.id}
-            aria-pressed={selected === i}
-            onClick={() => setSelected(i)}
-          >
-            {n.label}
-          </button>
-        ))}
-      </div>
-      {nodes.length > 25 && (
-        <p className="helper">
-          Showing 25 of {nodes.length} modules. The dependency list contains the
-          full indexed graph.
-        </p>
-      )}
-      {viewError && (
-        <p className="helper" role="status">
-          {viewError}
-        </p>
-      )}
+      <div className="module-controls" aria-label="Select architecture module">{visible.map((n, i) => <button key={n.id} aria-pressed={selected === i} onClick={() => setSelectedId(n.id)}>{n.label}</button>)}</div>
+      <div className="graph-pagination"><span>{filtered.length ? currentPage * 25 + 1 : 0}–{Math.min((currentPage + 1) * 25, filtered.length)} of {filtered.length} entities · {visibleEdges.length} visible edges</span><div><button disabled={!currentPage} onClick={() => setPage(currentPage - 1)}>Previous</button><button disabled={currentPage >= lastPage} onClick={() => setPage(currentPage + 1)}>Next</button></div></div>
+      <p className="graph-scope">{flat ? "2D representation" : !available ? "Accessible 2D fallback · WebGL unavailable or reduced motion enabled" : "3D · drag to orbit · controls to pan and fit"}. Selection details include relationships beyond the current page.</p>
+      {viewError && <p className="helper" role="status">{viewError}</p>}
     </div>
   );
 }

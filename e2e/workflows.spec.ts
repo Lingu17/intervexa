@@ -6,7 +6,7 @@ test("marketing, branding and static fallback render on desktop and mobile", asy
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: /Understand the code/ }),
+    page.getByRole("heading", { name: /Your code has a structure/ }),
   ).toBeVisible();
   await expect(
     page.getByRole("img", { name: "Intervexa", exact: true }).first(),
@@ -20,7 +20,7 @@ test("marketing, branding and static fallback render on desktop and mobile", asy
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(
-    page.getByRole("link", { name: /Create your workspace/ }),
+    page.getByRole("link", { name: /Open your workspace/ }).first(),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -130,6 +130,7 @@ test("analysis progress, pinned finding evidence and disconnected execution with
         created_at: Date.now() / 1000,
       };
     else if (path === "/api/findings/controlled-finding") data = finding;
+    else if (path === "/api/findings") data = [finding];
     else {
       await route.continue();
       return;
@@ -175,6 +176,11 @@ test("analysis progress, pinned finding evidence and disconnected execution with
   await expect(
     page.getByRole("button", { name: "Run isolated comparison" }),
   ).toBeDisabled();
+  await page.goto("/app/interactions");
+  await expect(page.locator(".interaction-evidence")).toContainText("2 shared changed identifiers");
+  await expect(page.locator(".interaction-pr").first()).toHaveAttribute("href", "https://github.com/controlled/repository/pull/1");
+  await page.locator(".interaction-conclusion").click();
+  await expect(page.getByRole("heading", { name: finding.title })).toBeVisible();
   await page.screenshot({
     path: "test-results/finding-desktop.png",
     fullPage: true,
@@ -189,13 +195,16 @@ test("3D illustration renders or falls back without navigation errors", async ({
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(
-    page.getByRole("link", { name: "Create your workspace" }),
+    page.getByRole("link", { name: "Create your workspace" }).first(),
   ).toBeVisible();
   const available = await page.evaluate(
     () => !!document.createElement("canvas").getContext("webgl2"),
   );
   if (available) {
     await expect(page.locator(".graph-wrap canvas")).toBeVisible();
+    for (const name of ["Pan left", "Pan up", "Zoom in", "Fit graph to view"]) {
+      await page.getByRole("button", { name, exact: true }).click();
+    }
     await page.screenshot({
       path: "test-results/landing-3d.png",
       fullPage: true,

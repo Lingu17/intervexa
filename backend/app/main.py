@@ -37,6 +37,7 @@ from .models import (
     ProviderPreference,
     PullRequest,
     Repository,
+    RepositoryIndex,
     Session,
     TestRun,
     User,
@@ -423,10 +424,17 @@ async def add_repo(body: RepoInput, p=Depends(principal), db: DBSession = Depend
 @app.get("/api/repositories")
 def repositories(p=Depends(principal), db: DBSession = Depends(get_db)):
     rows = db.execute(
-        select(Repository, func.count(PullRequest.id))
+        select(
+            Repository,
+            func.count(PullRequest.id),
+            RepositoryIndex.sha,
+            RepositoryIndex.branch,
+            RepositoryIndex.created_at,
+        )
         .outerjoin(PullRequest, PullRequest.repo_id == Repository.id)
+        .outerjoin(RepositoryIndex, RepositoryIndex.repo_id == Repository.id)
         .where(Repository.org_id == p[1])
-        .group_by(Repository.id)
+        .group_by(Repository.id, RepositoryIndex.sha, RepositoryIndex.branch, RepositoryIndex.created_at)
     ).all()
     return [
         {
@@ -435,8 +443,9 @@ def repositories(p=Depends(principal), db: DBSession = Depends(get_db)):
             "default_branch": r.default_branch,
             "policy": r.policy,
             "pull_requests": count,
+            "index": {"sha": sha, "branch": branch, "created_at": indexed_at} if sha else None,
         }
-        for r, count in rows
+        for r, count, sha, branch, indexed_at in rows
     ]
 
 

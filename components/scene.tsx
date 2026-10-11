@@ -8,6 +8,10 @@ import {
   RotateCw,
   Maximize2,
   Move,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import * as THREE from "three";
 import {
@@ -25,24 +29,26 @@ function CameraRig({
   target,
   angle,
   distance,
+  pan,
 }: {
   target: [number, number, number];
   angle: number;
   distance: number;
+  pan: [number, number];
 }) {
   const invalidate = useThree((state) => state.invalidate);
   const focus = useMemo(
-    () => new THREE.Vector3(target[0] * 0.22, 0.25, target[2] * 0.22),
-    [target],
+    () => new THREE.Vector3(target[0] * 0.22 + pan[0], 0.25, target[2] * 0.22 + pan[1]),
+    [target, pan],
   );
   const position = useMemo(
     () =>
       new THREE.Vector3(
-        Math.sin(angle) * distance,
+        Math.sin(angle) * distance + pan[0],
         distance * 0.7,
-        Math.cos(angle) * distance,
+        Math.cos(angle) * distance + pan[1],
       ),
-    [angle, distance],
+    [angle, distance, pan],
   );
   useEffect(() => {
     invalidate();
@@ -98,16 +104,18 @@ function Module({
   node,
   active,
   hover,
+  related,
   onSelect,
   onHover,
 }: {
   node: ArchitectureNode;
   active: boolean;
   hover: boolean;
+  related: boolean;
   onSelect: () => void;
   onHover: (hover: boolean) => void;
 }) {
-  const color = palette[node.status || ""] || (active ? "#b8a3ff" : "#788bba");
+  const color = palette[node.status || ""] || (active ? "#b8a3ff" : related ? "#67d9e8" : "#485671");
   return (
     <group
       onClick={(event) => {
@@ -177,7 +185,7 @@ function Module({
             </mesh>
           ))}
         </>
-      ) : node.kind === "function" || node.kind === "interface" ? (
+      ) : node.kind === "function" || node.kind === "interface" || node.kind === "class" ? (
         <mesh position={[0, 0.12, 0]}>
           <octahedronGeometry args={[0.38]} />
           <meshStandardMaterial color={color} metalness={0.5} roughness={0.3} />
@@ -229,6 +237,7 @@ export default function Scene({
   const [hover, setHover] = useState(-1),
     [angle, setAngle] = useState(0.55),
     [distance, setDistance] = useState(9.5);
+  const [pan, setPan] = useState<[number, number]>([0, 0]);
   const drag = useRef<{ x: number; angle: number; moved: boolean } | null>(
     null,
   );
@@ -284,6 +293,7 @@ export default function Scene({
           target={points[selected] || [0, 0, 0]}
           angle={angle}
           distance={distance}
+          pan={pan}
         />
         <gridHelper
           args={[12, 24, "#3b4168", "#1b2540"]}
@@ -322,7 +332,7 @@ export default function Scene({
               key={`${edge.source}:${edge.target}:${index}`}
               a={points[a]}
               b={points[b]}
-              color={edge.kind === "import" ? "#77dcc1" : "#a291eb"}
+              color={edge.kind === "import" ? "#67d9e8" : "#a291eb"}
               active={a === selected || b === selected}
             />
           );
@@ -333,6 +343,7 @@ export default function Scene({
               node={node}
               active={selected === index}
               hover={hover === index}
+              related={edges.some(e => (e.source === nodes[selected]?.id && e.target === node.id) || (e.target === nodes[selected]?.id && e.source === node.id))}
               onSelect={() => {
                 if (!drag.current?.moved) onSelect(index);
               }}
@@ -346,6 +357,13 @@ export default function Scene({
           <Move size={12} />
           Drag to orbit
         </span>
+        <button
+          aria-label="Pan left" onClick={() => setPan([pan[0] - 0.5, pan[1]])}
+        ><ArrowLeft size={14}/></button>
+        <button aria-label="Pan right" onClick={() => setPan([pan[0] + 0.5, pan[1]])}><ArrowRight size={14}/></button>
+        <button aria-label="Pan up" onClick={() => setPan([pan[0], pan[1] - 0.5])}><ArrowUp size={14}/></button>
+        <button aria-label="Pan down" onClick={() => setPan([pan[0], pan[1] + 0.5])}><ArrowDown size={14}/></button>
+        <button aria-label="Fit graph to view" onClick={() => { setPan([0, 0]); setAngle(0.55); setDistance(nodes.length > 10 ? 12 : 9.5); }}><Maximize2 size={14}/></button>
         <button
           aria-label="Rotate scene left"
           onClick={() => setAngle(angle - 0.4)}
@@ -377,6 +395,7 @@ export default function Scene({
           onClick={() => {
             setAngle(0.55);
             setDistance(9.5);
+            setPan([0, 0]);
           }}
         >
           <Maximize2 size={14} />
