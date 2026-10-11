@@ -6,7 +6,7 @@
 
 **A 3D developer workspace for revision-pinned source, dependency exploration, and pull-request interaction analysis.**
 
-[Live application](https://intervexa-web.onrender.com/) · [How to use](https://intervexa-web.onrender.com/#how-to-use) · [Architecture](docs/architecture.md) · [Test evidence](docs/github-integration-report.md)
+[Live application](https://intervexa-three.vercel.app/) · [How to use](https://intervexa-three.vercel.app/#how-to-use) · [Architecture](docs/architecture.md) · [Test evidence](docs/github-integration-report.md)
 
 **Next.js · TypeScript · React Three Fiber · FastAPI · PostgreSQL · GitHub Apps**
 
@@ -114,7 +114,7 @@ flowchart LR
 
 ## Run and explore
 
-The hosted application needs no local installation: [open Intervexa](https://intervexa-web.onrender.com/login). Static exploration and analysis need no paid AI key. Free Render hosting can sleep and cause cold-start delays.
+The hosted application needs no local installation: [open Intervexa](https://intervexa-three.vercel.app/login). Static exploration and analysis need no paid AI key. The frontend runs on Vercel; the Render API can sleep and cause cold-start delays.
 
 For local development, use **Node 24, Python 3.14 and Git**. The full commands, configuration and supported scope are below.
 
@@ -211,6 +211,6 @@ Argon2 passwords, hashed opaque database sessions, HTTP-only cookies, CSRF heade
 
 This is **not a completed production SaaS**. Email verification/recovery, invitations/SSO, higher-order combinations, cross-language resolved contracts, SQL migration semantics, private-repository runner access, dependency installation, automatic causal attribution, and high-assurance hostile-code isolation remain unfinished. No SOC 2, penetration test, trademark clearance, domain availability, or uptime guarantee is claimed. Frontend/backend deployment, PostgreSQL readiness and live account/repository workflows are verified.
 
-See [engineering status](docs/STATUS.md), [deployment and free-tier assessment](docs/deployment.md), and [brand guide](docs/brand-guidelines.md). Open [the live application](https://intervexa-web.onrender.com/login) and sign in with Google or GitHub. Both access the owner workspace after explicit linking. The backend and Supabase migrations are live; repository indexing and architecture work. Free services can cold start. Contact notifications are configured and one production message was confirmed delivered by Resend. Password recovery/email verification, live AI and isolated execution still require further implementation or infrastructure.
+See [engineering status](docs/STATUS.md), [deployment and free-tier assessment](docs/deployment.md), and [brand guide](docs/brand-guidelines.md). Open [the live application](https://intervexa-three.vercel.app/login) and sign in with Google or GitHub. Both access the owner workspace after explicit linking. The backend and Supabase migrations are live; repository indexing and architecture work. Free services can cold start. Contact notifications are configured and one production message was confirmed delivered by Resend. Password recovery/email verification, live AI and isolated execution still require further implementation or infrastructure.
 
 </details>

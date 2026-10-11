@@ -2,7 +2,9 @@
 
 ## Vercel frontend + Render backend
 
-The target hosting setup is now Vercel for the repository-root Next.js frontend and Render for FastAPI. `vercel.json` selects Next.js; `render.yaml` defines only the API. The historical deployment notes below describe the previous Render frontend, not verification of the Vercel migration.
+The deployed hosting setup is now Vercel for the repository-root Next.js frontend and Render for FastAPI. `vercel.json` selects Next.js; `render.yaml` defines only the API. The historical deployment notes below describe the previous Render frontend, not verification of the Vercel migration.
+
+Migration status (2026-10-11): the frontend is live at [intervexa-three.vercel.app](https://intervexa-three.vercel.app), connected to [intervexa-api.onrender.com](https://intervexa-api.onrender.com). Direct and proxied database readiness and proxied health returned HTTP 200. GitHub sign-in on Vercel opened the existing owner workspace with three connected repositories and saved analyses. Both GitHub OAuth and repository App callbacks/homepages were migrated; the App setup URL now opens the Vercel repository screen. Render `APP_ORIGIN` is the Vercel origin and the previous Render frontend is retained in `ALLOWED_ORIGINS` during migration. Google callback migration is awaiting owner completion because the Google Cloud client editor repeatedly failed to load. The old Render frontend has not been deleted. TypeScript, ESLint and the production build passed.
 
 1. Import `Lingu17/intervexa` into Vercel as a **single Next.js project**, root directory `./`. Do not import the detected Python backend into Vercel. Set `BACKEND_URL=https://intervexa-api.onrender.com` before building. Rebuild whenever it changes. The `/api/*` rewrite preserves same-origin browser sessions and CSRF headers.
 2. Keep the existing Render API and PostgreSQL database. Set its `APP_ORIGIN` to the exact production Vercel HTTPS origin, with no trailing slash. If retaining the old frontend temporarily, add that exact origin to `ALLOWED_ORIGINS`. Preview domains are not automatically allowed; do not add wildcard origins.
@@ -12,6 +14,8 @@ The target hosting setup is now Vercel for the repository-root Next.js frontend 
 Vercel external rewrites have a [120-second proxy limit](https://vercel.com/docs/errors/router_external_target_error). The local Next.js `proxyTimeout` does not override it. Indexing and isolated verification may exceed that limit; a timeout can occur while backend work continues. Refresh to check completion, and use background jobs with polling before promising support for longer synchronous requests. Render cold starts also count toward that limit.
 
 Keep database, session, OAuth and provider secrets on Render. Only the backend origin is needed on Vercel. Use a Vercel plan permitted for the application's usage; no paid upgrade is authorized by this configuration.
+
+## Previous Render deployment (historical)
 
 Hosting documentation was checked on 2026-10-10; configuration status updated on 2026-10-11. Source is published in the private owner repository [Lingu17/intervexa](https://github.com/Lingu17/intervexa). The Next.js frontend is live at [intervexa-web.onrender.com](https://intervexa-web.onrender.com) on Render Free, and its first GitHub Actions validation run passed. The owner created the dedicated Supabase Free project `ycojzjqvhjvqtbfsgkvt` in Mumbai; its Data API has been disabled so application tables are accessed through FastAPI.
 
@@ -23,9 +27,9 @@ Google OAuth client `Intervexa Sign In` was created in Cloud project `earnest-vi
 
 ## Candidate deployment
 
-The included `render.yaml` configures **two free web services**, not paid workers: Next.js and FastAPI. Use an existing authorized Supabase free PostgreSQL project or another owner-approved PostgreSQL host. Configure `DATABASE_URL=postgresql+psycopg://...` with `sslmode=require`. Never store credentials in Git or use SQLite on an ephemeral host. Installations need a GitHub App private key uploaded as Render secret file `github-app.pem`.
+The included `render.yaml` now configures only the FastAPI web service. The frontend is configured separately by `vercel.json`. Use an existing authorized Supabase free PostgreSQL project or another owner-approved PostgreSQL host. Configure `DATABASE_URL=postgresql+psycopg://...` with `sslmode=require`. Never store credentials in Git or use SQLite on an ephemeral host. Installations need a GitHub App private key uploaded as Render secret file `github-app.pem`.
 
-1. Push the source to an owner-controlled Git repository. Connect that repository to an existing Render account. Review the blueprint and verify both services still offer the free plan. Do not accept an upgrade or add a payment method to bypass eligibility.
+1. Push the source to an owner-controlled Git repository. Connect that repository to an existing Render account. Review the blueprint and verify the backend service still offers the selected plan. Do not accept an upgrade or add a payment method to bypass eligibility.
 2. Set the backend `APP_ORIGIN` to the exact HTTPS frontend origin, `DATABASE_URL` to PostgreSQL, and a random >=32-character `SESSION_SECRET`. Supply the GitHub App settings from README. Set the frontend `BACKEND_URL` **before building**, because Next.js rewrites capture it at build time; rebuild when the endpoint changes.
 3. Upload the GitHub private key through the hosting provider's secret-file UI, not the repository. Keep OAuth callback query strings out of proxy/access logs. The startup command applies migrations before exposing the API.
 4. Configure the GitHub App callback and setup URLs to the frontend HTTPS origin, and webhook URL to backend `/api/github/webhook`. Verify GitHub delivery responses and signatures with a real installation.
