@@ -1,8 +1,113 @@
-# Intervexa
+<div align="center">
 
-**Every change. Every interaction. Verified.**
+<img src="public/brand/intervexa-logo-dark.svg" alt="Intervexa" width="260" />
 
-An early-access developer workspace combining revision-pinned repository exploration, dependency intelligence, pending-PR interaction analysis and reviewed verification. The original empty-workspace implementation has been extended without replacing its Next.js/FastAPI/SQLAlchemy architecture.
+# Understand the code. See the interaction.
+
+**A 3D developer workspace for revision-pinned source, dependency exploration, and pull-request interaction analysis.**
+
+[Live application](https://intervexa-web.onrender.com/) · [How to use](https://intervexa-web.onrender.com/#how-to-use) · [Architecture](docs/architecture.md) · [Test evidence](docs/github-integration-report.md)
+
+**Next.js · TypeScript · React Three Fiber · FastAPI · PostgreSQL · GitHub Apps**
+
+</div>
+
+![Intervexa live homepage with interactive 3D architecture](docs/images/three-dimensional-home.png)
+
+*Real application screenshot. The public architecture scene is a labeled conceptual example; connected repository views use indexed source. Interactive orbit, zoom, selection and fullscreen are available in the live app.*
+
+## The problem worth solving
+
+Two pull requests can each pass their own tests and still break a shared assumption when combined. Intervexa brings the code, pending changes, and verification evidence into one workspace so a developer can inspect that interaction before merging.
+
+It is an early-access engineering project: static results are advisory hypotheses, not automatic proof of a defect.
+
+## A two-minute product tour
+
+1. **Connect** selected GitHub repositories through the read-only GitHub App.
+2. **Index** a branch at an exact commit and explore its 3D module map.
+3. **Search** indexed files, Python symbols and identifiers with source-line references.
+4. **Sync and select** 2–10 open pull requests to analyze shared files, identifiers and Python contract changes.
+5. **Review** findings, pinned revisions and coverage. Experimental verification requires a reviewed test and a separate isolated runner.
+
+| Capability | What it demonstrates |
+| --- | --- |
+| Spatial code explorer | Custom Three.js geometry, curved relationships, demand rendering, orbit/zoom/fullscreen, keyboard controls and an isometric fallback |
+| Repository intelligence | Bounded concurrent fetching, Python AST symbols/imports, exact-commit source and lexical retrieval |
+| PR interaction analysis | Scoped signature/return-key comparison, bounded pair selection, immutable snapshots and explicit uncertainty |
+| Reliable background work | Persistent database queue, deduplication, bounded retries, leases, cancellation and stale-revision detection |
+| Secure account workflows | Google/GitHub OAuth, explicit identity linking, Argon2 passwords, opaque hashed sessions, origin/CSRF and tenant checks |
+| Optional BYOK assistance | Ephemeral provider keys, consent-bound source excerpts, citation checks and optional semantic embeddings |
+| Practical workspace | Analysis history, findings, execution evidence, usage, profile, appearance, audit and export |
+
+## Real GitHub workflow, not a seeded demo
+
+A dedicated private repository was created, pushed and pulled from this account. Two real open PRs provide a controlled response-key regression:
+
+| State | Observed local behavior |
+| --- | --- |
+| Baseline | Pass |
+| PR #1: rename `token` to `session` | Pass independently |
+| PR #2: add a `token` consumer | Pass independently |
+| Combined revisions | Repeatable `KeyError: 'token'` |
+
+The deployed application discovered the repository, synchronized both PRs, and produced a source-grounded potential interaction identifying the removed `token` return key. A real push also invalidated the old snapshot and automatically triggered fresh analysis. The hosted result correctly remained **inconclusive** because its isolated runner is not configured. Local execution is separate evidence, not a claim of hosted sandbox verification.
+
+![Real production finding from controlled GitHub pull requests](docs/images/live-pr-finding.png)
+
+## Engineering evidence
+
+![Real main-branch repository index and spatial map](docs/images/live-repository-map.png)
+
+*The private integration fixture indexed four files at its exact baseline SHA; source search and Python import relationships were verified through the deployed application.*
+
+| Check | Latest result |
+| --- | --- |
+| Backend regression suite | **173 passed** |
+| Browser workflows | **11 passed** |
+| Named acceptance scenarios | **100 / 100 passed** |
+| Repeated controlled Git-state runs | **100 / 100 matched expected behavior**: 75 isolated-state passes, 25 intentional combined-state failures |
+| TypeScript, ESLint and production build | Passed in the validated release; CI checks every push |
+| Live integrations | Google sign-in, GitHub App discovery, PR sync, pinned indexing and static analysis verified |
+
+The 100 scenarios exposed 11 initial failures that were fixed: signature distinctions, file/scope matching, nested return isolation and malformed runner evidence. Counts establish behavior on defined examples; they do not imply 100% general AI accuracy. See the [acceptance report](docs/acceptance-report.md) and [real GitHub report](docs/github-integration-report.md).
+
+## Architecture and design choices
+
+```mermaid
+flowchart LR
+    UI[Next.js / React / 3D interface] --> API[FastAPI authenticated API]
+    API --> DB[(PostgreSQL / Supabase)]
+    DB --> Q[Persistent queue worker]
+    API --> GH[GitHub App: selected repositories]
+    Q --> GH
+    Q --> AST[Deterministic Python analysis]
+    AST --> DB
+    API -. consent + ephemeral key .-> AI[Optional AI provider]
+    API -. reviewed test .-> R[Separate Linux runner]
+    R -. execution evidence .-> DB
+```
+
+- **Evidence before certainty:** risk scores prioritize human review; unverified relationships stay labeled.
+- **Responsiveness without stale identity:** immediate workspace shell, short-lived tab-memory caching and cache invalidation on mutation/logout/401.
+- **Bounded work:** four parallel pinned-file requests, 60 indexed files, 50 KB per file and 500 KB source total.
+- **Separate execution boundary:** repository code never executes on the API host.
+- **Honest failure states:** unavailable runners, missing providers and temporary service failures surface recovery guidance instead of fabricated results.
+
+## Run and explore
+
+The hosted application needs no local installation: [open Intervexa](https://intervexa-web.onrender.com/login). Static exploration and analysis need no paid AI key. Free Render hosting can sleep and cause cold-start delays.
+
+For local development, use **Node 24, Python 3.14 and Git**. The full commands, configuration and supported scope are below.
+
+## Current scope
+
+Python static contracts and module-path imports are supported. Dynamic calls, fully resolved cross-language dependency graphs, higher-order PR interactions, SQL migration semantics, email recovery/delivery and multi-owner workspaces remain unfinished. Production AI and isolated execution require separately configured services. There is no uptime, compliance or universal accuracy claim.
+
+This repository is private. Recruiters need repository access to inspect the source; the live homepage remains shareable.
+
+<details>
+<summary><strong>Developer handbook — local setup, integrations, validation and security</strong></summary>
 
 ## Run locally (Windows PowerShell)
 
@@ -89,3 +194,5 @@ Argon2 passwords, hashed opaque database sessions, HTTP-only cookies, CSRF heade
 This is **not a completed production SaaS**. Email verification/recovery, invitations/SSO, higher-order combinations, cross-language resolved contracts, SQL migration semantics, private-repository runner access, dependency installation, automatic causal attribution, and high-assurance hostile-code isolation remain unfinished. No SOC 2, penetration test, trademark clearance, domain availability, or uptime guarantee is claimed. Frontend/backend deployment, PostgreSQL readiness and live account/repository workflows are verified.
 
 See [engineering status](docs/STATUS.md), [deployment and free-tier assessment](docs/deployment.md), and [brand guide](docs/brand-guidelines.md). Open [the live application](https://intervexa-web.onrender.com/login) and sign in with Google or GitHub. Both access the owner workspace after explicit linking. The backend and Supabase migrations are live; repository indexing and architecture work. Free services can cold start. Email recovery/delivery, live AI and isolated execution remain unavailable until their required services are configured.
+
+</details>

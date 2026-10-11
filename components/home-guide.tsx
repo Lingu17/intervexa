@@ -42,7 +42,7 @@ export function HomeGuide() {
           [
             "03",
             "Build your code map",
-            "Open a repository → Explore codebase. Choose a branch and click Refresh pinned index. Architecture shows the indexed modules; drag to orbit, zoom, select a module, or expand to fullscreen.",
+            "Open a repository → Explore codebase → Load authorized branches. Choose a branch and click Index branch for the first map, or Refresh pinned index to update it. Drag to orbit, zoom, select a module, or expand to fullscreen.",
           ],
           [
             "04",
